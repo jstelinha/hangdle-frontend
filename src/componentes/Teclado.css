@@ -1,0 +1,54 @@
+.teclado {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.teclado__linha {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.tecla {
+    flex: 0 1 44px;
+    min-width: 0;
+    height: 52px;
+    border: none;
+    border-radius: var(--raio-casa);
+    background: var(--tecla);
+    color: var(--tecla-tinta);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tecla:disabled {
+    cursor: default;
+}
+
+.tecla--livre:hover:not(:disabled) {
+    background: var(--regua-forte);
+}
+
+.tecla--certa {
+    background: var(--marca);
+    color: var(--marca-tinta);
+}
+
+.tecla--errada {
+    background: var(--letra-errada);
+    color: var(--letra-errada-tinta);
+}
+
+@media (max-width: 480px) {
+    .teclado__linha {
+        gap: 4px;
+    }
+
+    .tecla {
+        height: 48px;
+        font-size: 1rem;
+    }
+}

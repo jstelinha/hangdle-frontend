@@ -1,0 +1,16 @@
+.aviso {
+    margin-top: 20px;
+    padding: 12px 14px;
+    border-left: 3px solid currentColor;
+    font-size: 0.9375rem;
+}
+
+.aviso--erro {
+    background: var(--perigo-fundo);
+    color: var(--perigo);
+}
+
+.aviso--sucesso {
+    background: var(--sucesso-fundo);
+    color: var(--marca);
+}

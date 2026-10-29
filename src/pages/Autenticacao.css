@@ -1,0 +1,18 @@
+.autenticacao {
+    max-width: 440px;
+}
+
+.autenticacao__formulario {
+    margin-top: 28px;
+}
+
+.autenticacao__enviar {
+    margin-top: 28px;
+}
+
+.autenticacao__troca {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--regua);
+    color: var(--tinta-2);
+}

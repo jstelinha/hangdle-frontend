@@ -1,0 +1,119 @@
+.grafico {
+    margin-top: 28px;
+}
+
+.grafico + .grafico {
+    padding-top: 24px;
+    border-top: 1px solid var(--regua);
+}
+
+.grafico figcaption {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.grafico__titulo {
+    font-weight: 700;
+}
+
+.grafico__subtitulo {
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+}
+
+.grafico__area {
+    margin-top: 12px;
+}
+
+.grafico__leitura {
+    margin-top: 8px;
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+}
+
+.grafico__tabela {
+    margin-top: 12px;
+}
+
+.grafico__tabela summary {
+    color: var(--marca);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.grafico__tabela .tabela {
+    margin-top: 8px;
+}
+
+.legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin-top: 10px;
+    list-style: none;
+    color: var(--tinta-2);
+    font-size: 0.875rem;
+}
+
+.legenda__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legenda__marca {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+}
+
+.legenda__marca--barra {
+    border-radius: 2px 2px 0 0;
+}
+
+.legenda__marca--quadrado {
+    border-radius: 2px;
+}
+
+.legenda__marca--circulo {
+    border-radius: 50%;
+}
+
+.legenda__marca--linha {
+    width: 16px;
+    height: 2px;
+}
+
+.dica {
+    padding: 8px 10px;
+    border: 1px solid var(--regua);
+    background: var(--superficie);
+    color: var(--tinta);
+    font-size: 0.8125rem;
+}
+
+.dica__titulo {
+    color: var(--tinta-2);
+}
+
+.dica__linha {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.dica__chave {
+    width: 12px;
+    height: 2px;
+}
+
+.dica__nome {
+    color: var(--tinta-2);
+}
+
+.recharts-wrapper svg {
+    overflow: visible;
+}

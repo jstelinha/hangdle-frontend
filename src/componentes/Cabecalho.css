@@ -1,0 +1,28 @@
+.cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 64px;
+    border-bottom: 1px solid var(--regua);
+}
+
+.cabecalho__marca {
+    display: inline-flex;
+    text-decoration: none;
+}
+
+.cabecalho__usuario {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.cabecalho__nome {
+    overflow: hidden;
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

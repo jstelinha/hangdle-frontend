@@ -1,0 +1,43 @@
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.campo + .campo {
+    margin-top: 20px;
+}
+
+.campo__rotulo {
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.campo__entrada {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--regua-forte);
+    border-radius: 0;
+    background: var(--superficie);
+}
+
+.campo__entrada:focus-visible {
+    outline: 2px solid var(--marca);
+    outline-offset: 0;
+    border-color: var(--marca);
+}
+
+.campo--erro .campo__entrada {
+    border-color: var(--perigo);
+}
+
+.campo__erro {
+    color: var(--perigo);
+    font-size: 0.875rem;
+}
+
+.campo__ajuda {
+    color: var(--tinta-2);
+    font-size: 0.875rem;
+}

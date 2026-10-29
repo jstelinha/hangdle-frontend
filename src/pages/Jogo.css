@@ -1,0 +1,40 @@
+.jogo__regras {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 20px;
+    padding-left: 20px;
+}
+
+.jogo__niveis {
+    margin-top: 24px;
+}
+
+.jogo__nota {
+    margin-top: 16px;
+    padding: 10px 14px;
+    border-left: 3px solid var(--regua-forte);
+    background: var(--superficie);
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+}
+
+.jogo__acao {
+    margin-top: 24px;
+}
+
+.jogo__aviso {
+    min-height: 1.5em;
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+    text-align: center;
+}
+
+.jogo__tabela {
+    margin-top: 16px;
+}
+
+.jogo .secao__titulo:focus,
+.jogo .titulo:focus {
+    outline: none;
+}
