@@ -5,13 +5,11 @@ import { GraficoPontos } from "../componentes/graficos/GraficoPontos";
 import { PainelRodada } from "../componentes/PainelRodada";
 import { Palavra } from "../componentes/Palavra";
 import { Teclado } from "../componentes/Teclado";
-import { sorteioComSemente } from "../jogo/aleatorio";
 import { letraBase } from "../jogo/letras";
 import { NIVEIS } from "../jogo/niveis";
 import { PALAVRAS_FIXAS } from "../jogo/palavras";
-import { fecharRodada, rankingAcumulado, type DesempenhoParticipante, type ResultadoRodada } from "../jogo/partida";
+import { fecharRodada, type DesempenhoParticipante, type ResultadoParticipante, type ResultadoRodada } from "../jogo/partida";
 import { BONUS_PRIMEIRO } from "../jogo/pontuacao";
-import { criarRivais, simularRodada } from "../jogo/rivais";
 import { Rodada, type EstadoRodada } from "../jogo/Rodada";
 import "./Jogo.css";
 
@@ -25,22 +23,17 @@ const MENSAGEM_DO_FIM: Record<Exclude<EstadoRodada, "jogando">, string> = {
     tempo_esgotado: "O tempo acabou.",
 };
 
-function simularRivais(): DesempenhoParticipante[][] {
-    const sorteio = sorteioComSemente(Date.now());
-    const rivais = criarRivais(sorteio);
-    return PALAVRAS_FIXAS.map((palavra) =>
-        rivais.map((rival) => ({ nome: rival.nome, simulado: true, ...simularRodada(rival, palavra, NIVEIS[palavra.nivel], sorteio) })),
-    );
-}
-
 function desempenhoDoJogador(rodada: Rodada): DesempenhoParticipante {
     return {
         nome: NOME_DO_JOGADOR,
-        simulado: false,
         acertou: rodada.estado === "acertou",
         erros: rodada.erros,
         segundosGastos: rodada.segundosGastos,
     };
+}
+
+function seuResultado(rodada: ResultadoRodada): ResultadoParticipante | undefined {
+    return rodada.participantes.find((participante) => participante.nome === NOME_DO_JOGADOR);
 }
 
 function useFocoAoAparecer<T extends HTMLElement>() {
@@ -64,9 +57,8 @@ function Abertura({ aoComecar }: PropsAbertura) {
                 <li>Letra certa aparece em todas as posições. Letra errada custa 1 vida.</li>
                 <li>Acento e ç não importam: A revela Á, Ã e Â; C revela Ç.</li>
                 <li>Use o teclado da tela ou o do computador.</li>
-                <li>
-                    Pontos de quem acerta: (100 + 15 × vidas restantes + segundos restantes) × multiplicador. O primeiro a acertar ganha +{BONUS_PRIMEIRO}.
-                </li>
+                <li>Pontos de quem acerta: (100 + 15 × vidas restantes + segundos restantes) × multiplicador.</li>
+                <li>O bônus de +{BONUS_PRIMEIRO} para quem acerta primeiro vale quando houver outros jogadores na sala.</li>
             </ul>
             <table className="tabela jogo__niveis">
                 <caption>Os três níveis desta partida (categoria Comida)</caption>
@@ -89,7 +81,6 @@ function Abertura({ aoComecar }: PropsAbertura) {
                     ))}
                 </tbody>
             </table>
-            <p className="jogo__nota">Nesta versão você joga contra 5 rivais simulados pelo computador.</p>
             <button type="button" className="botao jogo__acao" onClick={aoComecar}>
                 Começar a rodada 1
             </button>
@@ -106,8 +97,7 @@ type PropsFimDaRodada = {
 
 function FimDaRodada({ resultado, estado, ultima, aoContinuar }: PropsFimDaRodada) {
     const titulo = useFocoAoAparecer<HTMLHeadingElement>();
-    const voce = resultado.participantes.find((participante) => !participante.simulado);
-    const ordenados = [...resultado.participantes].sort((a, b) => b.pontos - a.pontos);
+    const voce = seuResultado(resultado);
 
     return (
         <section className="secao" aria-labelledby="titulo-fim-da-rodada">
@@ -115,33 +105,24 @@ function FimDaRodada({ resultado, estado, ultima, aoContinuar }: PropsFimDaRodad
                 {MENSAGEM_DO_FIM[estado]}
             </h2>
             <p className="subtitulo">
-                A palavra era <strong>{resultado.palavra.texto}</strong>. Você fez {voce?.pontos ?? 0} pontos nesta rodada.
+                A palavra era <strong>{resultado.palavra.texto}</strong>.
             </p>
-            <table className="tabela jogo__tabela">
-                <caption>
-                    Rodada {resultado.numero} · {resultado.nivel.nome}
-                </caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Jogador</th>
-                        <th scope="col">Resultado</th>
-                        <th scope="col" className="numero">Erros</th>
-                        <th scope="col" className="numero">Tempo</th>
-                        <th scope="col" className="numero">Pontos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {ordenados.map((participante) => (
-                        <tr key={participante.nome} className={participante.simulado ? undefined : "tabela__destaque"}>
-                            <td>{participante.nome}</td>
-                            <td>{participante.acertou ? (participante.primeiroAAcertar ? `Acertou primeiro (+${BONUS_PRIMEIRO})` : "Acertou") : "Não acertou"}</td>
-                            <td className="numero">{participante.erros}</td>
-                            <td className="numero">{participante.segundosGastos} s</td>
-                            <td className="numero">{participante.pontos}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            {voce && (
+                <dl className="jogo__resumo">
+                    <div>
+                        <dt>Erros</dt>
+                        <dd>{voce.erros}</dd>
+                    </div>
+                    <div>
+                        <dt>Tempo</dt>
+                        <dd>{voce.segundosGastos} s</dd>
+                    </div>
+                    <div>
+                        <dt>Pontos</dt>
+                        <dd>{voce.pontos}</dd>
+                    </div>
+                </dl>
+            )}
             <button type="button" className="botao jogo__acao" onClick={aoContinuar}>
                 {ultima ? "Ver o resultado da partida" : `Começar a rodada ${resultado.numero + 1}`}
             </button>
@@ -156,8 +137,9 @@ type PropsFimDaPartida = {
 
 function FimDaPartida({ resultados, aoJogarDeNovo }: PropsFimDaPartida) {
     const titulo = useFocoAoAparecer<HTMLHeadingElement>();
-    const ranking = rankingAcumulado(resultados);
-    const posicao = ranking.findIndex((jogador) => !jogador.simulado) + 1;
+    const suas = resultados.map((rodada) => ({ rodada, voce: seuResultado(rodada) }));
+    const total = suas.reduce((soma, { voce }) => soma + (voce?.pontos ?? 0), 0);
+    const acertos = suas.filter(({ voce }) => voce?.acertou).length;
 
     return (
         <>
@@ -165,31 +147,45 @@ function FimDaPartida({ resultados, aoJogarDeNovo }: PropsFimDaPartida) {
                 Fim da partida
             </h1>
             <p className="subtitulo">
-                Você ficou em {posicao}º lugar entre {ranking.length} jogadores.
+                Você acertou {acertos} de {resultados.length} palavras e fez {total} pontos.
             </p>
-            <p className="jogo__nota">Os rivais desta partida são simulados pelo computador. As salas com outros jogadores chegam numa próxima versão.</p>
 
-            <section className="secao" aria-labelledby="titulo-ranking">
-                <h2 id="titulo-ranking" className="secao__titulo">
-                    Ranking
+            <section className="secao" aria-labelledby="titulo-rodadas">
+                <h2 id="titulo-rodadas" className="secao__titulo">
+                    Suas rodadas
                 </h2>
                 <table className="tabela jogo__tabela">
+                    <caption className="so-leitor">Suas rodadas</caption>
                     <thead>
                         <tr>
-                            <th scope="col" className="numero tabela__estreita">Posição</th>
-                            <th scope="col">Jogador</th>
+                            <th scope="col">Rodada</th>
+                            <th scope="col">Palavra</th>
+                            <th scope="col">Resultado</th>
+                            <th scope="col" className="numero">Erros</th>
+                            <th scope="col" className="numero">Tempo</th>
                             <th scope="col" className="numero">Pontos</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {ranking.map((jogador, indice) => (
-                            <tr key={jogador.nome} className={jogador.simulado ? undefined : "tabela__destaque"}>
-                                <td className="numero tabela__estreita">{indice + 1}º</td>
-                                <td>{jogador.simulado ? `${jogador.nome} (simulado)` : jogador.nome}</td>
-                                <td className="numero">{jogador.pontos}</td>
+                        {suas.map(({ rodada, voce }) => (
+                            <tr key={rodada.numero}>
+                                <td>
+                                    {rodada.numero} · {rodada.nivel.nome}
+                                </td>
+                                <td>{rodada.palavra.texto}</td>
+                                <td>{voce?.acertou ? "Acertou" : "Não acertou"}</td>
+                                <td className="numero">{voce?.erros}</td>
+                                <td className="numero">{voce?.segundosGastos} s</td>
+                                <td className="numero">{voce?.pontos}</td>
                             </tr>
                         ))}
                     </tbody>
+                    <tfoot>
+                        <tr className="tabela__destaque">
+                            <td colSpan={5}>Total</td>
+                            <td className="numero">{total}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </section>
 
@@ -197,8 +193,8 @@ function FimDaPartida({ resultados, aoJogarDeNovo }: PropsFimDaPartida) {
                 <h2 id="titulo-graficos" className="secao__titulo">
                     Gráficos da partida
                 </h2>
-                <GraficoPontos rodadas={resultados} />
-                <GraficoDispersao rodadas={resultados} />
+                <GraficoPontos rodadas={resultados} jogador={NOME_DO_JOGADOR} />
+                <GraficoDispersao rodadas={resultados} jogador={NOME_DO_JOGADOR} />
             </section>
 
             <div className="secao">
@@ -211,7 +207,6 @@ function FimDaPartida({ resultados, aoJogarDeNovo }: PropsFimDaPartida) {
 }
 
 export function JogoPage() {
-    const [rivais, setRivais] = useState(simularRivais);
     const [rodadas, setRodadas] = useState<Rodada[]>([]);
     const [verFinal, setVerFinal] = useState(false);
     const [aviso, setAviso] = useState("");
@@ -221,7 +216,7 @@ export function JogoPage() {
     const jogando = atual?.estado === "jogando";
     const resultados = rodadas
         .filter((rodada) => rodada.estado !== "jogando")
-        .map((rodada, indice) => fecharRodada(indice + 1, rodada.palavra, [desempenhoDoJogador(rodada), ...(rivais[indice] ?? [])]));
+        .map((rodada, indice) => fecharRodada(indice + 1, rodada.palavra, [desempenhoDoJogador(rodada)]));
     const ultimoResultado = resultados.at(-1);
 
     useEffect(() => {
@@ -267,7 +262,6 @@ export function JogoPage() {
     }
 
     function jogarDeNovo() {
-        setRivais(simularRivais());
         setRodadas([]);
         setVerFinal(false);
         setAviso("");

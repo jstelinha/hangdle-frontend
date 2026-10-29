@@ -17,7 +17,6 @@
     --perigo-fundo: #fbeceb;
     --sucesso-fundo: #e7f3ee;
     --serie-voce: #0f7f58;
-    --serie-rivais: #bcbab0;
     --serie-reta: #52514e;
     --grade: #e1e0d9;
     --eixo: #c3c2b7;
@@ -45,7 +44,6 @@
         --perigo-fundo: #2a1716;
         --sucesso-fundo: #13261f;
         --serie-voce: #2fa37c;
-        --serie-rivais: #55544f;
         --serie-reta: #c3c2b7;
         --grade: #2c2c2a;
         --eixo: #383835;
@@ -71,7 +69,6 @@
     --perigo-fundo: #2a1716;
     --sucesso-fundo: #13261f;
     --serie-voce: #2fa37c;
-    --serie-rivais: #55544f;
     --serie-reta: #c3c2b7;
     --grade: #2c2c2a;
     --eixo: #383835;
@@ -228,4 +225,15 @@ a {
     width: 1%;
     padding-right: 16px;
     white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .tabela {
+        font-size: 0.875rem;
+    }
+
+    .tabela th,
+    .tabela td {
+        padding: 8px 4px;
+    }
 }

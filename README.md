@@ -27,7 +27,7 @@ cadastrar e entrar, o back precisa estar no ar.
 |---|---|
 | `/cadastro` | Cadastro com nome, e-mail, CPF, senha e confirmação. Depois de criar a conta, leva para o login. |
 | `/login` | Login. Guarda o token no `localStorage` e leva para o jogo. |
-| `/jogo` | Só com login. Três rodadas (Fácil, Médio, Difícil) contra rivais simulados e, no fim, ranking e gráficos. |
+| `/jogo` | Só com login. Três rodadas (Fácil, Médio, Difícil) e, no fim, o resumo das suas rodadas e os gráficos da partida. |
 
 ## Testes
 

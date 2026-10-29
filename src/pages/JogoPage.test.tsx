@@ -13,11 +13,15 @@ function clicarLetras(letras: string) {
     }
 }
 
-function linhaDe(tabela: HTMLElement, jogador: string): string[] {
-    const linha = within(tabela)
+function ultimaColuna(tabela: HTMLElement): string[] {
+    return within(tabela)
         .getAllByRole("row")
-        .find((candidata) => within(candidata).queryByText(jogador) !== null);
-    return linha ? within(linha).getAllByRole("cell").map((celula) => celula.textContent ?? "") : [];
+        .slice(1)
+        .map((linha) => within(linha).getAllByRole("cell").at(-1)?.textContent ?? "");
+}
+
+function valorDoResumo(rotulo: string): string {
+    return screen.getByText(rotulo, { selector: "dt" }).nextElementSibling?.textContent ?? "";
 }
 
 describe("tela do jogo", () => {
@@ -71,27 +75,31 @@ describe("tela do jogo", () => {
         expect(screen.getByText("MAÇÃ")).toBeTruthy();
     });
 
-    it("partida completa termina no ranking e nos gráficos com os pontos de cada nível", () => {
+    it("partida completa: só as suas rodadas, sem bônus de primeiro e sem nada simulado", () => {
         vi.useFakeTimers();
         entrarComo("Larissa Souza");
         abrir("/jogo");
 
         fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 1" }));
         clicarLetras("MAC");
+        expect(valorDoResumo("Pontos")).toBe("340");
         fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 2" }));
         clicarLetras("ABCXI");
+        expect(valorDoResumo("Pontos")).toBe("420");
         fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 3" }));
         clicarLetras("PAODEQUIJ");
-        expect(screen.getByText("Acertou primeiro (+30)")).toBeTruthy();
+        expect(valorDoResumo("Pontos")).toBe("410");
         fireEvent.click(screen.getByRole("button", { name: "Ver o resultado da partida" }));
 
         expect(screen.getByRole("heading", { name: "Fim da partida" })).toBeTruthy();
-        expect(screen.getByText("Você ficou em 1º lugar entre 6 jogadores.")).toBeTruthy();
+        expect(screen.getByText("Você acertou 3 de 3 palavras e fez 1170 pontos.")).toBeTruthy();
 
-        const [ranking, pontosPorRodada] = screen.getAllByRole("table");
-        expect(linhaDe(ranking!, "Você")).toEqual(["1º", "Você", "1260"]);
+        const suasRodadas = screen.getByRole("table", { name: "Suas rodadas" });
+        expect(ultimaColuna(suasRodadas)).toEqual(["340", "420", "410", "1170"]);
 
-        const pontos = within(pontosPorRodada!).getAllByRole("row").slice(1).map((linha) => within(linha).getAllByRole("cell")[1]?.textContent);
-        expect(pontos).toEqual(["370", "450", "440"]);
+        const grafico = screen.getByRole("table", { name: "Seus pontos por rodada" });
+        expect(ultimaColuna(grafico)).toEqual(["340", "420", "410"]);
+
+        expect(screen.queryByText(/simulad|rivais/i)).toBeNull();
     });
 });

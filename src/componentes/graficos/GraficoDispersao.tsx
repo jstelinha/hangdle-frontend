@@ -1,8 +1,8 @@
 import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, type TooltipContentProps } from "recharts";
-import { errosPorTempo } from "../../jogo/analise";
+import { errosPorTempo, type PontoDaRodada } from "../../jogo/analise";
 import type { Regressao } from "../../jogo/estatistica";
 import type { ResultadoRodada } from "../../jogo/partida";
-import { COR_EIXO, COR_GRADE, COR_RETA, COR_RIVAIS, COR_SUPERFICIE, COR_TEXTO_EIXO, COR_VOCE } from "./cores";
+import { COR_EIXO, COR_GRADE, COR_RETA, COR_SUPERFICIE, COR_TEXTO_EIXO, COR_VOCE } from "./cores";
 import { Dica } from "./Dica";
 import { Legenda } from "./Legenda";
 import { TabelaDoGrafico } from "./TabelaDoGrafico";
@@ -10,20 +10,7 @@ import "./Grafico.css";
 
 type Props = {
     rodadas: ResultadoRodada[];
-};
-
-type PontoDoJogador = {
-    x: number;
-    y: number;
-    quem: string;
-    cor: string;
-};
-
-type LinhaDaTabela = {
-    rodada: string;
     jogador: string;
-    erros: number;
-    segundos: number;
 };
 
 type PropsMarcador = {
@@ -45,71 +32,51 @@ function MarcadorQuadrado({ cx = 0, cy = 0, fill }: PropsMarcador) {
     );
 }
 
-function MarcadorCirculo({ cx = 0, cy = 0, fill }: PropsMarcador) {
-    return (
-        <g>
-            <circle cx={cx} cy={cy} r={RAIO_DE_TOQUE} fill="transparent" />
-            <circle cx={cx} cy={cy} r={5} fill={fill} stroke={COR_SUPERFICIE} strokeWidth={2} />
-        </g>
-    );
-}
-
 function SemMarcador() {
     return <g />;
 }
 
 function DicaDispersao({ active, payload }: TooltipContentProps) {
-    const ponto: PontoDoJogador | undefined = payload?.[0]?.payload;
-    if (!active || !ponto || !ponto.quem) {
+    const ponto: PontoDaRodada | undefined = payload?.[0]?.payload;
+    if (!active || !ponto || !ponto.rodada) {
         return null;
     }
     return (
         <Dica
-            titulo={ponto.quem}
-            linhas={[{ nome: `${ponto.x === 1 ? "erro" : "erros"} em ${ponto.y} s`, valor: String(ponto.x), cor: ponto.cor }]}
+            titulo={`Rodada ${ponto.rodada}`}
+            linhas={[{ nome: `${ponto.x === 1 ? "erro" : "erros"} em ${ponto.y} s`, valor: String(ponto.x), cor: COR_VOCE }]}
         />
     );
 }
 
 function descreverTendencia(regressao: Regressao | null): string {
     if (regressao === null) {
-        return "Todos erraram a mesma quantidade de letras, então ainda não dá para calcular a tendência.";
+        return "Você errou a mesma quantidade de letras em todas as rodadas, então não dá para traçar a tendência.";
     }
     const direcao = regressao.inclinacao >= 0 ? "a mais" : "a menos";
-    return `Em média, cada erro a mais corresponde a ${decimal.format(Math.abs(regressao.inclinacao))} s ${direcao} na rodada (R² = ${centesimal.format(regressao.r2)}).`;
+    return `Nesta partida, cada erro a mais veio com ${decimal.format(Math.abs(regressao.inclinacao))} s ${direcao} na rodada (R² = ${centesimal.format(regressao.r2)}). Com poucas rodadas, a reta é só um indicativo.`;
 }
 
 // Rubrica de Probabilidade e Estatística - Análise Descritiva - Utilizar gráficos adequados aos objetivos de negócio (histogramas, dispersão, barras e colunas, séries temporais, regressão)
-export function GraficoDispersao({ rodadas }: Props) {
-    const dados = errosPorTempo(rodadas);
-    const voce: PontoDoJogador[] = dados.voce.map((ponto) => ({ ...ponto, quem: "Você", cor: COR_VOCE }));
-    const rivais: PontoDoJogador[] = dados.rivais.map((ponto) => ({ ...ponto, quem: "Rival simulado", cor: COR_RIVAIS }));
-    const maiorErro = Math.max(1, ...voce.map((ponto) => ponto.x), ...rivais.map((ponto) => ponto.x));
-    const linhas: LinhaDaTabela[] = rodadas.flatMap((rodada) =>
-        rodada.participantes.map((participante) => ({
-            rodada: `${rodada.numero} · ${rodada.nivel.nome}`,
-            jogador: participante.nome,
-            erros: participante.erros,
-            segundos: participante.segundosGastos,
-        })),
-    );
+export function GraficoDispersao({ rodadas, jogador }: Props) {
+    const dados = errosPorTempo(rodadas, jogador);
+    const maiorErro = Math.max(1, ...dados.pontos.map((ponto) => ponto.x));
 
     return (
         <figure className="grafico">
             <figcaption>
                 <span className="grafico__titulo">Erros × tempo gasto</span>
-                <span className="grafico__subtitulo">Cada ponto é a rodada de um jogador. A reta é a tendência calculada por regressão linear.</span>
+                <span className="grafico__subtitulo">Cada ponto é uma rodada sua. A reta é a tendência calculada por regressão linear.</span>
             </figcaption>
             <Legenda
                 itens={[
-                    { nome: "Você", cor: COR_VOCE, marca: "quadrado" },
-                    { nome: "Rivais simulados", cor: COR_RIVAIS, marca: "circulo" },
+                    { nome: "Suas rodadas", cor: COR_VOCE, marca: "quadrado" },
                     { nome: "Tendência", cor: COR_RETA, marca: "linha" },
                 ]}
             />
             <div className="grafico__area">
                 <ResponsiveContainer width="100%" height={280}>
-                    <ScatterChart margin={{ top: 8, right: 16, bottom: 24, left: 8 }}>
+                    <ScatterChart margin={{ top: 20, right: 24, bottom: 24, left: 8 }}>
                         <CartesianGrid stroke={COR_GRADE} />
                         <XAxis
                             type="number"
@@ -138,21 +105,19 @@ export function GraficoDispersao({ rodadas }: Props) {
                         {dados.reta.length === 2 && (
                             <Scatter name="Tendência" data={dados.reta} line={{ stroke: COR_RETA, strokeWidth: 2 }} shape={SemMarcador} legendType="none" tooltipType="none" isAnimationActive={false} />
                         )}
-                        <Scatter name="Rivais simulados" data={rivais} fill={COR_RIVAIS} shape={MarcadorCirculo} isAnimationActive={false} />
-                        <Scatter name="Você" data={voce} fill={COR_VOCE} shape={MarcadorQuadrado} isAnimationActive={false} />
+                        <Scatter name="Suas rodadas" data={dados.pontos} fill={COR_VOCE} shape={MarcadorQuadrado} isAnimationActive={false} />
                     </ScatterChart>
                 </ResponsiveContainer>
             </div>
             <p className="grafico__leitura">{descreverTendencia(dados.regressao)}</p>
-            <TabelaDoGrafico<LinhaDaTabela>
-                titulo="Erros e tempo de cada jogador por rodada"
+            <TabelaDoGrafico<PontoDaRodada>
+                titulo="Erros e tempo de cada rodada"
                 colunas={[
                     { titulo: "Rodada", valor: (linha) => linha.rodada },
-                    { titulo: "Jogador", valor: (linha) => linha.jogador },
-                    { titulo: "Erros", valor: (linha) => linha.erros, numerica: true },
-                    { titulo: "Segundos", valor: (linha) => linha.segundos, numerica: true },
+                    { titulo: "Erros", valor: (linha) => linha.x, numerica: true },
+                    { titulo: "Segundos", valor: (linha) => linha.y, numerica: true },
                 ]}
-                linhas={linhas}
+                linhas={dados.pontos}
             />
         </figure>
     );
