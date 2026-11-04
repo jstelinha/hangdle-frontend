@@ -5,12 +5,12 @@ import { buscarEstatisticasDoDia, buscarPalavraDoDia } from "../api/palavraDoDia
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Forca } from "../componentes/Forca";
-import { GraficoDoDia } from "../componentes/graficos/GraficoDoDia";
+import { HistogramaDeLetras } from "../componentes/graficos/HistogramaDeLetras";
 import { Palavra } from "../componentes/Palavra";
 import { ProximaPalavra } from "../componentes/ProximaPalavra";
 import { Teclado } from "../componentes/Teclado";
 import { guardarChutesDoDia, lerChutesDoDia } from "../jogo/chutesDoDia";
-import { colunasDoDia } from "../jogo/histogramaDoDia";
+import { colunasPorLetras, somarResultado } from "../jogo/histogramaDeLetras";
 import { letraBase } from "../jogo/letras";
 import { ERROS_PARA_PERDER, Rodada } from "../jogo/Rodada";
 import { lerSessao } from "../sessao/sessao";
@@ -85,7 +85,15 @@ function ComoTodoMundoFoi({ dia, rodada }: PropsComoTodoMundoFoi) {
         return null;
     }
     const seu = { acertou: rodada.estado === "acertou", chutes: rodada.chutes.length };
-    return <GraficoDoDia colunas={colunasDoDia(estatisticas, seu, { somarSeu: true })} />;
+    return (
+        <HistogramaDeLetras
+            titulo="Como todo mundo foi hoje"
+            subtitulo="Quantas pessoas acertaram com cada número de letras chutadas."
+            nota="Só entram as partidas de quem tem conta, mais a sua."
+            unidade="jogadores"
+            colunas={colunasPorLetras(somarResultado(estatisticas, seu), seu)}
+        />
+    );
 }
 
 function ConviteParaCriarConta() {
