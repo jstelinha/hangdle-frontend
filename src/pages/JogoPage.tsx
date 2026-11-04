@@ -1,39 +1,28 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { traduzirErro } from "../api/erros";
+import { buscarPalavraDoDia } from "../api/palavraDoDia";
+import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
-import { GraficoDispersao } from "../componentes/graficos/GraficoDispersao";
-import { GraficoPontos } from "../componentes/graficos/GraficoPontos";
-import { PainelRodada } from "../componentes/PainelRodada";
+import { Forca } from "../componentes/Forca";
 import { Palavra } from "../componentes/Palavra";
 import { Teclado } from "../componentes/Teclado";
 import { letraBase } from "../jogo/letras";
-import { NIVEIS } from "../jogo/niveis";
-import { PALAVRAS_FIXAS } from "../jogo/palavras";
-import { fecharRodada, type DesempenhoParticipante, type ResultadoParticipante, type ResultadoRodada } from "../jogo/partida";
-import { BONUS_PRIMEIRO } from "../jogo/pontuacao";
-import { Rodada, type EstadoRodada } from "../jogo/Rodada";
+import { ERROS_PARA_PERDER, Rodada } from "../jogo/Rodada";
+import type { PalavraDoDia } from "../types/jogo";
 import "./Jogo.css";
 
-const NOME_DO_JOGADOR = "Você";
-const TOTAL_DE_RODADAS = PALAVRAS_FIXAS.length;
-const INTERVALO_DO_RELOGIO = 250;
+type Carregamento =
+    | { situacao: "carregando" }
+    | { situacao: "falhou"; mensagem: string }
+    | { situacao: "pronta"; palavraDoDia: PalavraDoDia; rodada: Rodada };
 
-const MENSAGEM_DO_FIM: Record<Exclude<EstadoRodada, "jogando">, string> = {
-    acertou: "Você acertou a palavra!",
-    sem_vidas: "Suas vidas acabaram.",
-    tempo_esgotado: "O tempo acabou.",
-};
-
-function desempenhoDoJogador(rodada: Rodada): DesempenhoParticipante {
-    return {
-        nome: NOME_DO_JOGADOR,
-        acertou: rodada.estado === "acertou",
-        erros: rodada.erros,
-        segundosGastos: rodada.segundosGastos,
-    };
-}
-
-function seuResultado(rodada: ResultadoRodada): ResultadoParticipante | undefined {
-    return rodada.participantes.find((participante) => participante.nome === NOME_DO_JOGADOR);
+async function carregarPalavraDoDia(): Promise<Carregamento> {
+    try {
+        const palavraDoDia = await buscarPalavraDoDia();
+        return { situacao: "pronta", palavraDoDia, rodada: new Rodada(palavraDoDia.palavra) };
+    } catch (erro) {
+        return { situacao: "falhou", mensagem: traduzirErro(erro).mensagem };
+    }
 }
 
 function useFocoAoAparecer<T extends HTMLElement>() {
@@ -44,197 +33,83 @@ function useFocoAoAparecer<T extends HTMLElement>() {
     return elemento;
 }
 
-type PropsAbertura = {
-    aoComecar: () => void;
+type PropsPainel = {
+    categoria: string;
+    erros: number;
 };
 
-function Abertura({ aoComecar }: PropsAbertura) {
+function PainelDoDia({ categoria, erros }: PropsPainel) {
     return (
-        <>
-            <h1 className="titulo">Como jogar</h1>
-            <p className="subtitulo">Descubra a palavra chutando uma letra por vez, antes de acabar as vidas ou o tempo.</p>
-            <ul className="jogo__regras">
-                <li>Letra certa aparece em todas as posições. Letra errada custa 1 vida.</li>
-                <li>Acento e ç não importam: A revela Á, Ã e Â; C revela Ç.</li>
-                <li>Use o teclado da tela ou o do computador.</li>
-                <li>Pontos de quem acerta: (100 + 15 × vidas restantes + segundos restantes) × multiplicador.</li>
-                <li>O bônus de +{BONUS_PRIMEIRO} para quem acerta primeiro vale quando houver outros jogadores na sala.</li>
-            </ul>
-            <table className="tabela jogo__niveis">
-                <caption>Os três níveis desta partida (categoria Comida)</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Nível</th>
-                        <th scope="col" className="numero">Vidas</th>
-                        <th scope="col" className="numero">Tempo</th>
-                        <th scope="col" className="numero">Multiplicador</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {Object.values(NIVEIS).map((nivel) => (
-                        <tr key={nivel.codigo}>
-                            <td>{nivel.nome}</td>
-                            <td className="numero">{nivel.vidas}</td>
-                            <td className="numero">{nivel.segundos} s</td>
-                            <td className="numero">{String(nivel.multiplicador).replace(".", ",")}x</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            <button type="button" className="botao jogo__acao" onClick={aoComecar}>
-                Começar a rodada 1
-            </button>
-        </>
+        <p className="jogo__painel">
+            <span>
+                Categoria: <strong>{categoria}</strong>
+            </span>
+            <span>
+                Erros: <strong>{`${erros} de ${ERROS_PARA_PERDER}`}</strong>
+            </span>
+        </p>
     );
 }
 
-type PropsFimDaRodada = {
-    resultado: ResultadoRodada;
-    estado: Exclude<EstadoRodada, "jogando">;
-    ultima: boolean;
-    aoContinuar: () => void;
+type PropsFim = {
+    rodada: Rodada;
 };
 
-function FimDaRodada({ resultado, estado, ultima, aoContinuar }: PropsFimDaRodada) {
+function FimDoDia({ rodada }: PropsFim) {
     const titulo = useFocoAoAparecer<HTMLHeadingElement>();
-    const voce = seuResultado(resultado);
 
     return (
-        <section className="secao" aria-labelledby="titulo-fim-da-rodada">
-            <h2 id="titulo-fim-da-rodada" className="secao__titulo" tabIndex={-1} ref={titulo}>
-                {MENSAGEM_DO_FIM[estado]}
+        <section className="secao" aria-labelledby="titulo-fim-do-dia">
+            <h2 id="titulo-fim-do-dia" className="secao__titulo" tabIndex={-1} ref={titulo}>
+                {rodada.estado === "acertou" ? "Você acertou a palavra do dia!" : "O boneco ficou completo."}
             </h2>
             <p className="subtitulo">
-                A palavra era <strong>{resultado.palavra.texto}</strong>.
+                A palavra era <strong>{rodada.palavra}</strong>.
             </p>
-            {voce && (
-                <dl className="jogo__resumo">
-                    <div>
-                        <dt>Erros</dt>
-                        <dd>{voce.erros}</dd>
-                    </div>
-                    <div>
-                        <dt>Tempo</dt>
-                        <dd>{voce.segundosGastos} s</dd>
-                    </div>
-                    <div>
-                        <dt>Pontos</dt>
-                        <dd>{voce.pontos}</dd>
-                    </div>
-                </dl>
-            )}
-            <button type="button" className="botao jogo__acao" onClick={aoContinuar}>
-                {ultima ? "Ver o resultado da partida" : `Começar a rodada ${resultado.numero + 1}`}
-            </button>
+            <dl className="jogo__resumo">
+                <div>
+                    <dt>Letras chutadas</dt>
+                    <dd>{rodada.chutes.length}</dd>
+                </div>
+                <div>
+                    <dt>Erros</dt>
+                    <dd>{rodada.erros}</dd>
+                </div>
+            </dl>
         </section>
     );
 }
 
-type PropsFimDaPartida = {
-    resultados: ResultadoRodada[];
-    aoJogarDeNovo: () => void;
-};
-
-function FimDaPartida({ resultados, aoJogarDeNovo }: PropsFimDaPartida) {
-    const titulo = useFocoAoAparecer<HTMLHeadingElement>();
-    const suas = resultados.map((rodada) => ({ rodada, voce: seuResultado(rodada) }));
-    const total = suas.reduce((soma, { voce }) => soma + (voce?.pontos ?? 0), 0);
-    const acertos = suas.filter(({ voce }) => voce?.acertou).length;
-
-    return (
-        <>
-            <h1 className="titulo" tabIndex={-1} ref={titulo}>
-                Fim da partida
-            </h1>
-            <p className="subtitulo">
-                Você acertou {acertos} de {resultados.length} palavras e fez {total} pontos.
-            </p>
-
-            <section className="secao" aria-labelledby="titulo-rodadas">
-                <h2 id="titulo-rodadas" className="secao__titulo">
-                    Suas rodadas
-                </h2>
-                <table className="tabela jogo__tabela">
-                    <caption className="so-leitor">Suas rodadas</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col">Rodada</th>
-                            <th scope="col">Palavra</th>
-                            <th scope="col">Resultado</th>
-                            <th scope="col" className="numero">Erros</th>
-                            <th scope="col" className="numero">Tempo</th>
-                            <th scope="col" className="numero">Pontos</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {suas.map(({ rodada, voce }) => (
-                            <tr key={rodada.numero}>
-                                <td>
-                                    {rodada.numero} · {rodada.nivel.nome}
-                                </td>
-                                <td>{rodada.palavra.texto}</td>
-                                <td>{voce?.acertou ? "Acertou" : "Não acertou"}</td>
-                                <td className="numero">{voce?.erros}</td>
-                                <td className="numero">{voce?.segundosGastos} s</td>
-                                <td className="numero">{voce?.pontos}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                    <tfoot>
-                        <tr className="tabela__destaque">
-                            <td colSpan={5}>Total</td>
-                            <td className="numero">{total}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </section>
-
-            <section className="secao" aria-labelledby="titulo-graficos">
-                <h2 id="titulo-graficos" className="secao__titulo">
-                    Gráficos da partida
-                </h2>
-                <GraficoPontos rodadas={resultados} jogador={NOME_DO_JOGADOR} />
-                <GraficoDispersao rodadas={resultados} jogador={NOME_DO_JOGADOR} />
-            </section>
-
-            <div className="secao">
-                <button type="button" className="botao" onClick={aoJogarDeNovo}>
-                    Jogar de novo
-                </button>
-            </div>
-        </>
-    );
-}
-
 export function JogoPage() {
-    const [rodadas, setRodadas] = useState<Rodada[]>([]);
-    const [verFinal, setVerFinal] = useState(false);
+    const [carregamento, setCarregamento] = useState<Carregamento>({ situacao: "carregando" });
     const [aviso, setAviso] = useState("");
     const [, setTique] = useState(0);
 
-    const atual = rodadas.at(-1);
-    const jogando = atual?.estado === "jogando";
-    const resultados = rodadas
-        .filter((rodada) => rodada.estado !== "jogando")
-        .map((rodada, indice) => fecharRodada(indice + 1, rodada.palavra, [desempenhoDoJogador(rodada)]));
-    const ultimoResultado = resultados.at(-1);
+    const pronta = carregamento.situacao === "pronta" ? carregamento : null;
+    const jogando = pronta?.rodada.estado === "jogando";
 
     useEffect(() => {
-        if (!atual || !jogando) {
-            return;
-        }
-        const relogio = window.setInterval(() => {
-            atual.atualizarTempo();
-            setTique((tique) => tique + 1);
-        }, INTERVALO_DO_RELOGIO);
-        return () => window.clearInterval(relogio);
-    }, [atual, jogando]);
+        let ativo = true;
+        carregarPalavraDoDia().then((resultado) => {
+            if (ativo) {
+                setCarregamento(resultado);
+            }
+        });
+        return () => {
+            ativo = false;
+        };
+    }, []);
+
+    function tentarDeNovo() {
+        setCarregamento({ situacao: "carregando" });
+        carregarPalavraDoDia().then(setCarregamento);
+    }
 
     function teclar(tecla: string) {
-        if (!atual) {
+        if (!pronta) {
             return;
         }
-        const resultado = atual.chutar(tecla);
+        const resultado = pronta.rodada.chutar(tecla);
         if (resultado === "repetida") {
             setAviso(`Você já tentou a letra ${letraBase(tecla)}. Letra repetida não conta como erro.`);
         } else if (resultado === "acerto" || resultado === "erro") {
@@ -256,51 +131,45 @@ export function JogoPage() {
         return () => window.removeEventListener("keydown", ouvir);
     }, []);
 
-    function comecarProximaRodada() {
-        setAviso("");
-        setRodadas([...rodadas, new Rodada(PALAVRAS_FIXAS[rodadas.length])]);
-    }
-
-    function jogarDeNovo() {
-        setRodadas([]);
-        setVerFinal(false);
-        setAviso("");
-    }
-
     return (
         <div className="pagina">
             <Cabecalho />
             <main className="pagina__conteudo jogo">
-                {!atual && <Abertura aoComecar={comecarProximaRodada} />}
+                <h1 className="titulo">Palavra do dia</h1>
+                <p className="subtitulo">
+                    Descubra a palavra chutando uma letra por vez. Acento e ç não importam. No sexto erro, o boneco fica completo.
+                </p>
 
-                {atual && !verFinal && (
+                {carregamento.situacao === "carregando" && (
+                    <p className="jogo__aviso" role="status">
+                        Carregando a palavra do dia...
+                    </p>
+                )}
+
+                {carregamento.situacao === "falhou" && (
                     <>
-                        <h1 className="so-leitor">Partida do Hangdle</h1>
-                        <PainelRodada
-                            numero={rodadas.length}
-                            total={TOTAL_DE_RODADAS}
-                            nivel={atual.nivel}
-                            categoria={atual.palavra.categoria}
-                            vidasRestantes={atual.vidasRestantes}
-                            segundosRestantes={atual.segundosRestantes}
-                        />
-                        <Palavra casas={atual.casas} mostrarResposta={!jogando} />
-                        <p className="jogo__aviso" role="status">
-                            {aviso}
-                        </p>
-                        {jogando && <Teclado certas={atual.letrasCertas} erradas={atual.letrasErradas} desativado={false} aoTeclar={teclar} />}
-                        {atual.estado !== "jogando" && ultimoResultado && (
-                            <FimDaRodada
-                                resultado={ultimoResultado}
-                                estado={atual.estado}
-                                ultima={rodadas.length === TOTAL_DE_RODADAS}
-                                aoContinuar={rodadas.length === TOTAL_DE_RODADAS ? () => setVerFinal(true) : comecarProximaRodada}
-                            />
-                        )}
+                        <Aviso mensagem={carregamento.mensagem} />
+                        <button type="button" className="botao jogo__acao" onClick={tentarDeNovo}>
+                            Tentar de novo
+                        </button>
                     </>
                 )}
 
-                {verFinal && <FimDaPartida resultados={resultados} aoJogarDeNovo={jogarDeNovo} />}
+                {pronta && (
+                    <>
+                        <PainelDoDia categoria={pronta.palavraDoDia.categoria} erros={pronta.rodada.erros} />
+                        <Forca erros={pronta.rodada.erros} />
+                        <Palavra casas={pronta.rodada.casas} mostrarResposta={!jogando} />
+                        <p className="jogo__aviso" role="status">
+                            {aviso}
+                        </p>
+                        {jogando ? (
+                            <Teclado certas={pronta.rodada.letrasCertas} erradas={pronta.rodada.letrasErradas} desativado={false} aoTeclar={teclar} />
+                        ) : (
+                            <FimDoDia rodada={pronta.rodada} />
+                        )}
+                    </>
+                )}
             </main>
         </div>
     );

@@ -4,8 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { abrir, erroDaApi, erroDeRede, tokenQueExpiraEm } from "../testes/ferramentas";
 
-vi.mock("../api/axios", () => ({ api: { post: vi.fn() } }));
+vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 const post = vi.mocked(api.post);
+const get = vi.mocked(api.get);
 
 async function entrar(usuario: UserEvent, email: string, senha: string) {
     await usuario.type(screen.getByLabelText("E-mail"), email);
@@ -16,6 +17,7 @@ async function entrar(usuario: UserEvent, email: string, senha: string) {
 describe("tela de login", () => {
     beforeEach(() => {
         post.mockReset();
+        get.mockResolvedValue({ data: { dia: "2026-11-03", palavra: "MAÇÃ", categoria: "Comida" } });
     });
 
     it("guarda o token no localStorage e leva para a área logada", async () => {
@@ -27,7 +29,7 @@ describe("tela de login", () => {
         await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
 
         expect(post).toHaveBeenCalledWith("/login", { email: "larissa@exemplo.com", senha: "Hangdle#2026" });
-        expect(await screen.findByRole("heading", { name: "Como jogar" })).toBeTruthy();
+        expect(await screen.findByRole("heading", { name: "Palavra do dia" })).toBeTruthy();
         expect(localStorage.getItem("hangdle.token")).toBe(token);
         expect(screen.getByText("Larissa Souza")).toBeTruthy();
     });
@@ -79,7 +81,7 @@ describe("tela de login", () => {
         const usuario = userEvent.setup();
         abrir("/login");
         await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
-        await screen.findByRole("heading", { name: "Como jogar" });
+        await screen.findByRole("heading", { name: "Palavra do dia" });
 
         await usuario.click(screen.getByRole("button", { name: "Sair" }));
 

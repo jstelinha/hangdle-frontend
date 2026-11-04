@@ -1,32 +1,33 @@
-import { act, fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { abrir, entrarComo } from "../testes/ferramentas";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { api } from "../api/axios";
+import { SEM_RESPOSTA } from "../api/erros";
+import { abrir, entrarComo, erroDeRede } from "../testes/ferramentas";
+
+vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
+const get = vi.mocked(api.get);
+
+const MACA_DO_DIA = { dia: "2026-11-03", palavra: "MAÇÃ", categoria: "Comida" };
 
 function tecla(letra: string): HTMLElement {
     return screen.getByRole("button", { name: letra });
-}
-
-function clicarLetras(letras: string) {
-    for (const letra of letras) {
-        fireEvent.click(tecla(letra));
-    }
-}
-
-function ultimaColuna(tabela: HTMLElement): string[] {
-    return within(tabela)
-        .getAllByRole("row")
-        .slice(1)
-        .map((linha) => within(linha).getAllByRole("cell").at(-1)?.textContent ?? "");
 }
 
 function valorDoResumo(rotulo: string): string {
     return screen.getByText(rotulo, { selector: "dt" }).nextElementSibling?.textContent ?? "";
 }
 
-describe("tela do jogo", () => {
-    afterEach(() => {
-        vi.useRealTimers();
+async function abrirJogo() {
+    entrarComo("Larissa Souza");
+    abrir("/jogo");
+    await screen.findByText("Comida");
+}
+
+describe("palavra do dia", () => {
+    beforeEach(() => {
+        get.mockReset();
+        get.mockResolvedValue({ data: MACA_DO_DIA });
     });
 
     it("sem sessão volta para o login", () => {
@@ -35,71 +36,65 @@ describe("tela do jogo", () => {
         expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
     });
 
-    it("letra certa revela, errada custa vida e repetida só avisa", async () => {
-        entrarComo("Larissa Souza");
-        const usuario = userEvent.setup();
-        abrir("/jogo");
+    it("busca a palavra no back e começa com a forca e as casas vazias", async () => {
+        await abrirJogo();
 
-        await usuario.click(screen.getByRole("button", { name: "Começar a rodada 1" }));
-        expect(screen.getByText("Rodada 1 de 3 · Fácil · Comida")).toBeTruthy();
+        expect(get).toHaveBeenCalledWith("/palavra-do-dia");
+        expect(screen.getByRole("img", { name: "Forca vazia" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Palavra: vazio, vazio, vazio, vazio" })).toBeTruthy();
+    });
+
+    it("letra certa revela, errada desenha o boneco e repetida só avisa", async () => {
+        const usuario = userEvent.setup();
+        await abrirJogo();
 
         await usuario.click(tecla("M"));
         expect(screen.getByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
 
         await usuario.keyboard("z");
-        expect(screen.getByRole("img", { name: "7 de 8 vidas" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+        expect(screen.getByText("1 de 6")).toBeTruthy();
 
         await usuario.keyboard("z");
         expect(screen.getByText("Você já tentou a letra Z. Letra repetida não conta como erro.")).toBeTruthy();
-        expect(screen.getByRole("img", { name: "7 de 8 vidas" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+    });
 
-        await usuario.click(tecla("A"));
-        expect(screen.getByRole("img", { name: "Palavra: M, A, vazio, Ã" })).toBeTruthy();
+    it("completar a palavra mostra o acerto e em quantas letras", async () => {
+        await abrirJogo();
 
-        await usuario.click(tecla("C"));
-        expect(screen.getByRole("heading", { name: "Você acertou a palavra!" })).toBeTruthy();
+        for (const letra of "ZMAC") {
+            fireEvent.click(tecla(letra));
+        }
+
+        expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
+        expect(valorDoResumo("Letras chutadas")).toBe("4");
+        expect(valorDoResumo("Erros")).toBe("1");
         expect(screen.queryByRole("group", { name: "Teclado" })).toBeNull();
     });
 
-    it("o relógio encerra a rodada quando o tempo acaba", () => {
-        vi.useFakeTimers();
-        entrarComo("Larissa Souza");
-        abrir("/jogo");
+    it("no sexto erro o boneco fica completo e a palavra aparece", async () => {
+        await abrirJogo();
 
-        fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 1" }));
-        act(() => {
-            vi.advanceTimersByTime(120_000);
-        });
+        for (const letra of "ZWYKLB") {
+            fireEvent.click(tecla(letra));
+        }
 
-        expect(screen.getByRole("heading", { name: "O tempo acabou." })).toBeTruthy();
+        expect(screen.getByRole("heading", { name: "O boneco ficou completo." })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Forca com o boneco completo" })).toBeTruthy();
         expect(screen.getByText("MAÇÃ")).toBeTruthy();
     });
 
-    it("partida completa: só as suas rodadas, sem bônus de primeiro e sem nada simulado", () => {
-        vi.useFakeTimers();
+    it("servidor fora do ar: avisa e deixa tentar de novo", async () => {
+        get.mockRejectedValueOnce(erroDeRede());
+        const usuario = userEvent.setup();
         entrarComo("Larissa Souza");
         abrir("/jogo");
 
-        fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 1" }));
-        clicarLetras("MAC");
-        expect(valorDoResumo("Pontos")).toBe("340");
-        fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 2" }));
-        clicarLetras("ABCXI");
-        expect(valorDoResumo("Pontos")).toBe("420");
-        fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 3" }));
-        clicarLetras("PAODEQUIJ");
-        expect(valorDoResumo("Pontos")).toBe("410");
-        fireEvent.click(screen.getByRole("button", { name: "Ver o resultado da partida" }));
+        expect((await screen.findByRole("alert")).textContent).toBe(SEM_RESPOSTA);
 
-        expect(screen.getByRole("heading", { name: "Fim da partida" })).toBeTruthy();
-        expect(screen.getByText("Você acertou 3 de 3 palavras e fez 1170 pontos.")).toBeTruthy();
+        await usuario.click(screen.getByRole("button", { name: "Tentar de novo" }));
 
-        const suasRodadas = screen.getByRole("table", { name: "Suas rodadas" });
-        expect(ultimaColuna(suasRodadas)).toEqual(["340", "420", "410", "1170"]);
-
-        const grafico = screen.getByRole("table", { name: "Seus pontos por rodada" });
-        expect(ultimaColuna(grafico)).toEqual(["340", "420", "410"]);
-
-        expect(screen.queryByText(/simulad|rivais/i)).toBeNull();
+        expect(await screen.findByText("Comida")).toBeTruthy();
     });
 });
