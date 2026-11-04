@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { buscarEstatisticasDoDia, buscarPalavraDoDia } from "../api/palavraDoDia";
 import { Aviso } from "../componentes/Aviso";
@@ -12,6 +13,7 @@ import { guardarChutesDoDia, lerChutesDoDia } from "../jogo/chutesDoDia";
 import { colunasDoDia } from "../jogo/histogramaDoDia";
 import { letraBase } from "../jogo/letras";
 import { ERROS_PARA_PERDER, Rodada } from "../jogo/Rodada";
+import { lerSessao } from "../sessao/sessao";
 import type { EstatisticasDoDia, PalavraDoDia } from "../types/jogo";
 import "./Jogo.css";
 
@@ -86,6 +88,25 @@ function ComoTodoMundoFoi({ dia, rodada }: PropsComoTodoMundoFoi) {
     return <GraficoDoDia colunas={colunasDoDia(estatisticas, seu, { somarSeu: true })} />;
 }
 
+function ConviteParaCriarConta() {
+    return (
+        <aside className="jogo__convite" aria-labelledby="titulo-convite">
+            <h3 id="titulo-convite" className="jogo__convite-titulo">
+                Guarde seus resultados
+            </h3>
+            <p>Crie uma conta grátis para guardar suas partidas, ver a sua sequência de dias e saber se está melhorando.</p>
+            <div className="jogo__convite-acoes">
+                <Link to="/cadastro" className="botao">
+                    Criar conta
+                </Link>
+                <Link to="/login" className="botao botao--discreto">
+                    Entrar
+                </Link>
+            </div>
+        </aside>
+    );
+}
+
 type PropsFim = {
     rodada: Rodada;
     dia: string;
@@ -114,6 +135,7 @@ function FimDoDia({ rodada, dia, aoVirarODia }: PropsFim) {
                 </div>
             </dl>
             <ComoTodoMundoFoi dia={dia} rodada={rodada} />
+            {!lerSessao() && <ConviteParaCriarConta />}
             <ProximaPalavra dia={dia} aoVirarODia={aoVirarODia} />
         </section>
     );

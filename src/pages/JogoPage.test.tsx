@@ -159,6 +159,25 @@ describe("palavra do dia", () => {
         expect(get).toHaveBeenCalledWith("/palavra-do-dia/estatisticas", { params: { dia: "2026-11-03" } });
     });
 
+    it("no fim, convida o visitante a criar conta", async () => {
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        const convite = within(screen.getByRole("complementary", { name: "Guarde seus resultados" }));
+        expect(convite.getByRole("link", { name: "Criar conta" }).getAttribute("href")).toBe("/cadastro");
+        expect(convite.getByRole("link", { name: "Entrar" }).getAttribute("href")).toBe("/login");
+    });
+
+    it("quem já tem conta não vê o convite", async () => {
+        entrarComo("Larissa Souza");
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect(screen.queryByRole("complementary", { name: "Guarde seus resultados" })).toBeNull();
+    });
+
     it("se as estatísticas falharem, o resultado continua na tela", async () => {
         get.mockImplementation(async (url: string) => {
             if (url === "/palavra-do-dia") {

@@ -42,6 +42,29 @@
     text-align: center;
 }
 
+.jogo__convite {
+    margin-top: 28px;
+    padding: 16px;
+    border: 1px solid var(--regua);
+    background: var(--sucesso-fundo);
+}
+
+.jogo__convite-titulo {
+    font-size: 1rem;
+}
+
+.jogo__convite p {
+    margin-top: 4px;
+    color: var(--tinta-2);
+}
+
+.jogo__convite-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+}
+
 .jogo .secao__titulo:focus,
 .jogo .titulo:focus {
     outline: none;
