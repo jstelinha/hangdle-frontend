@@ -17,7 +17,7 @@ async function entrar(usuario: UserEvent, email: string, senha: string) {
 describe("tela de login", () => {
     beforeEach(() => {
         post.mockReset();
-        get.mockResolvedValue({ data: { dia: "2026-11-03", palavra: "MAÇÃ", categoria: "Comida" } });
+        get.mockResolvedValue({ data: { resultados: [] } });
     });
 
     it("guarda o token no localStorage e leva para a área logada", async () => {
@@ -29,7 +29,7 @@ describe("tela de login", () => {
         await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
 
         expect(post).toHaveBeenCalledWith("/login", { email: "larissa@exemplo.com", senha: "Hangdle#2026" });
-        expect(await screen.findByRole("heading", { name: "Palavra do dia" })).toBeTruthy();
+        expect(await screen.findByRole("heading", { name: "Suas estatísticas" })).toBeTruthy();
         expect(localStorage.getItem("hangdle.token")).toBe(token);
         expect(screen.getByText("Larissa Souza")).toBeTruthy();
     });
@@ -81,7 +81,7 @@ describe("tela de login", () => {
         const usuario = userEvent.setup();
         abrir("/login");
         await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
-        await screen.findByRole("heading", { name: "Palavra do dia" });
+        await screen.findByRole("heading", { name: "Suas estatísticas" });
 
         await usuario.click(screen.getByRole("button", { name: "Sair" }));
 

@@ -58,7 +58,7 @@ export function LoginPage() {
             const resposta = await api.post<Sessao>("/login", { email: form.email.trim(), senha: form.senha });
             salvarSessao(resposta.data);
             // Rubrica de Front-end - Autenticação - Redirecionar para a área logada
-            navegar("/jogo", { replace: true });
+            navegar("/estatisticas", { replace: true });
         } catch (erro) {
             // Rubrica de Front-end - Autenticação - Lidar com os erros da API de forma amigável para o usuário
             const traduzido = traduzirErro(erro);
