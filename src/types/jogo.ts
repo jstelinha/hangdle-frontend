@@ -4,6 +4,13 @@ export type PalavraDoDia = {
     categoria: string;
 };
 
+export type ResultadoDiario = PalavraDoDia & {
+    letras: string[];
+    chutes: number;
+    erros: number;
+    acertou: boolean;
+};
+
 export type EstatisticasDoDia = {
     dia: string;
     jogadores: number;

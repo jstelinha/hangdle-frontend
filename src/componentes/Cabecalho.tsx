@@ -19,6 +19,9 @@ export function Cabecalho() {
             </Link>
             {sessao ? (
                 <div className="cabecalho__usuario">
+                    <Link to="/estatisticas" className="cabecalho__link">
+                        Estatísticas
+                    </Link>
                     <span className="cabecalho__nome">{sessao.usuario.nome}</span>
                     <button type="button" className="botao botao--discreto" onClick={sair}>
                         Sair

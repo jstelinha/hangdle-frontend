@@ -19,6 +19,12 @@
     min-width: 0;
 }
 
+.cabecalho__link {
+    color: var(--marca);
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
 .cabecalho__nome {
     overflow: hidden;
     color: var(--tinta-2);

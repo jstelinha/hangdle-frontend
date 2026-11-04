@@ -21,6 +21,17 @@ export function diaNoFuso(instante: Date): string {
     return `${partes.year}-${partes.month}-${partes.day}`;
 }
 
+export function diaAnterior(dia: string): string {
+    const data = new Date(`${dia}T12:00:00Z`);
+    data.setUTCDate(data.getUTCDate() - 1);
+    return data.toISOString().slice(0, 10);
+}
+
+export function formatarDia(dia: string): string {
+    const [ano, mes, diaDoMes] = dia.split("-");
+    return `${diaDoMes}/${mes}/${ano}`;
+}
+
 export function segundosAteAProximaPalavra(instante: Date): number {
     const partes = partesNoFuso(instante);
     const passados = Number(partes.hour) * 3600 + Number(partes.minute) * 60 + Number(partes.second);
