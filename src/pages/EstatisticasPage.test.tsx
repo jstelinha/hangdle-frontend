@@ -48,6 +48,31 @@ describe("página de estatísticas", () => {
         expect(within(tabela).getByText("ONÇA")).toBeTruthy();
     });
 
+    it("mostra a tendência de letras por dia e o histograma das partidas", async () => {
+        get.mockResolvedValue({
+            data: { resultados: [partida(HOJE, "MAÇÃ", true, 5), partida(ONTEM, "ARARA", true, 7), partida(diaAnterior(ONTEM), "ONÇA", false, 6)] },
+        });
+        entrarComo("Larissa Souza");
+
+        abrir("/estatisticas");
+
+        const serie = await screen.findByRole("table", { name: "Letras por dia" });
+        expect(within(serie).getAllByRole("row")).toHaveLength(3);
+        expect(screen.getByText(/Você está precisando de menos letras: 2 a menos por dia/)).toBeTruthy();
+
+        const histograma = screen.getByRole("table", { name: "Em quantas letras você acerta" });
+        const linhas = within(histograma)
+            .getAllByRole("row")
+            .slice(1)
+            .map((linha) => within(linha).getAllByRole("cell").map((celula) => celula.textContent));
+        expect(linhas).toEqual([
+            ["5 letras", "1"],
+            ["6 letras", "0"],
+            ["7 letras", "1"],
+            ["Não acertou", "1"],
+        ]);
+    });
+
     it("quem ainda não jogou é convidado a jogar", async () => {
         get.mockResolvedValue({ data: { resultados: [] } });
         entrarComo("Larissa Souza");

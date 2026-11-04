@@ -4,8 +4,12 @@ import { traduzirErro } from "../api/erros";
 import { buscarHistorico } from "../api/resultados";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
+import { GraficoTendencia } from "../componentes/graficos/GraficoTendencia";
+import { HistogramaDeLetras } from "../componentes/graficos/HistogramaDeLetras";
+import { colunasPorLetras, contagemDoHistorico } from "../jogo/histogramaDeLetras";
 import { resumirHistorico, type ResumoDoHistorico } from "../jogo/historico";
 import { diaNoFuso, formatarDia } from "../jogo/relogioDoDia";
+import { serieDeLetras } from "../jogo/tendencia";
 import type { ResultadoDiario } from "../types/jogo";
 import "./Estatisticas.css";
 
@@ -42,6 +46,23 @@ function Resumo({ resumo }: { resumo: ResumoDoHistorico }) {
                 </div>
             ))}
         </dl>
+    );
+}
+
+function GraficosDoHistorico({ resultados }: { resultados: ResultadoDiario[] }) {
+    return (
+        <section className="secao" aria-labelledby="titulo-graficos">
+            <h2 id="titulo-graficos" className="secao__titulo">
+                Você está melhorando?
+            </h2>
+            <GraficoTendencia serie={serieDeLetras(resultados)} />
+            <HistogramaDeLetras
+                titulo="Em quantas letras você acerta"
+                subtitulo="Quantas partidas você acertou com cada número de letras chutadas."
+                unidade="partidas"
+                colunas={colunasPorLetras(contagemDoHistorico(resultados))}
+            />
+        </section>
     );
 }
 
@@ -108,6 +129,7 @@ export function EstatisticasPage() {
                 {carregamento.situacao === "pronta" && carregamento.resultados.length > 0 && (
                     <>
                         <Resumo resumo={resumirHistorico(carregamento.resultados, diaNoFuso(new Date()))} />
+                        <GraficosDoHistorico resultados={carregamento.resultados} />
                         <TabelaDePartidas resultados={carregamento.resultados} />
                     </>
                 )}
