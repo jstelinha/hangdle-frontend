@@ -4,7 +4,7 @@ A forca no estilo do Termo. Projeto da Tech Academy de Gabriel Zafani e Julia
 Stela.
 
 Vite + React 19 + TypeScript, com `react-router-dom`, `axios`, `zod` e Recharts.
-A API fica em [cade-backend](https://github.com/jstelinha/cade-backend).
+A API fica em [hangdle-backend](https://github.com/jstelinha/hangdle-backend).
 
 ## Onde está cada item da rubrica
 
@@ -55,7 +55,7 @@ proposta tem conexão com a persona/cliente?**.
 | `react-router-dom` | `src/Rotas.tsx` |
 | `axios` (no lugar do `fetch`) | `src/api/axios.ts` |
 | `zod` | `src/validacao/esquemas.ts` |
-| Docker | `Dockerfile` (o compose fica no `cade-backend`) |
+| Docker | `Dockerfile` (o compose fica no `hangdle-backend`) |
 | Testes automáticos | arquivos `*.test.ts(x)` e `.github/workflows/testes.yml` |
 
 ## Onde o Node.js é usado
@@ -67,8 +67,10 @@ Vite (`npm run dev`, que é o que o container do front executa), o build
 
 ## Rodar tudo com Docker
 
-O `docker-compose.yml` fica no `cade-backend` e sobe os quatro containers: banco,
-back, front e nginx. Siga o README de lá e abra `http://localhost`.
+O `docker-compose.yml` fica no `hangdle-backend`, numa pasta ao lado desta, e
+sobe os quatro containers: banco, back, front e nginx. Siga o README de lá e abra
+`http://localhost`. O nginx entrega o front em `/` e leva tudo que começa com
+`/api/` para o back.
 
 ## Rodar só o front
 
@@ -77,8 +79,10 @@ npm install
 npm run dev
 ```
 
-O front chama a API em `http://localhost:3000` (`src/api/axios.ts`). Para
-cadastrar e entrar, o back precisa estar no ar.
+O front chama a API pelo caminho `/api` (`src/api/axios.ts`). No `npm run dev`,
+o proxy do `vite.config.ts` leva esse caminho para o back em
+`http://localhost:3000`, sem o `/api`: `/api/login` chega no back como `/login`.
+Para cadastrar e entrar, o back precisa estar no ar nessa porta.
 
 ## Telas
 
