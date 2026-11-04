@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import { encerrarSessao, lerSessao } from "../sessao/sessao";
+import { useSessao } from "../sessao/contexto";
+import { encerrarSessao } from "../sessao/sessao";
 import { Logotipo } from "./Logotipo";
 import "./Cabecalho.css";
 
 export function Cabecalho() {
     const navegar = useNavigate();
-    const sessao = lerSessao();
+    const sessao = useSessao();
 
     function sair() {
         encerrarSessao();

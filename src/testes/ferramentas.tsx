@@ -2,13 +2,16 @@ import { render } from "@testing-library/react";
 import { AxiosError, AxiosHeaders, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 import { MemoryRouter } from "react-router-dom";
 import { Rotas } from "../Rotas";
+import { ProvedorDeSessao } from "../sessao/ProvedorDeSessao";
 import { salvarSessao } from "../sessao/sessao";
 
 export function abrir(caminho: string) {
     return render(
-        <MemoryRouter initialEntries={[caminho]}>
-            <Rotas />
-        </MemoryRouter>,
+        <ProvedorDeSessao>
+            <MemoryRouter initialEntries={[caminho]}>
+                <Rotas />
+            </MemoryRouter>
+        </ProvedorDeSessao>,
     );
 }
 

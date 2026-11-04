@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Logotipo } from "../componentes/Logotipo";
-import { lerSessao } from "../sessao/sessao";
+import { useSessao } from "../sessao/contexto";
 import "./Inicio.css";
 
 export function InicioPage() {
-    const sessao = lerSessao();
+    const sessao = useSessao();
 
     return (
         <div className="pagina">

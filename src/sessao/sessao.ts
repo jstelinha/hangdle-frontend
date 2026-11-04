@@ -32,19 +32,40 @@ function ehUsuario(valor: unknown): valor is Usuario {
     );
 }
 
-// Rubrica de Front-end - Autenticação - Armazenar o token no localStorage
-export function salvarSessao(sessao: Sessao): void {
-    localStorage.setItem(CHAVE_TOKEN, sessao.token);
-    localStorage.setItem(CHAVE_USUARIO, JSON.stringify({ id: sessao.usuario.id, nome: sessao.usuario.nome, email: sessao.usuario.email }));
+export const EVENTO_SESSAO = "hangdle:sessao";
+
+function avisarQueMudou(): void {
+    window.dispatchEvent(new Event(EVENTO_SESSAO));
 }
 
-export function encerrarSessao(): void {
+function guardarUsuario(usuario: Usuario): void {
+    localStorage.setItem(CHAVE_USUARIO, JSON.stringify({ id: usuario.id, nome: usuario.nome, email: usuario.email }));
+}
+
+function apagarSessao(): void {
     try {
         localStorage.removeItem(CHAVE_TOKEN);
         localStorage.removeItem(CHAVE_USUARIO);
     } catch {
         return;
     }
+}
+
+// Rubrica de Front-end - Autenticação - Armazenar o token no localStorage
+export function salvarSessao(sessao: Sessao): void {
+    localStorage.setItem(CHAVE_TOKEN, sessao.token);
+    guardarUsuario(sessao.usuario);
+    avisarQueMudou();
+}
+
+export function atualizarUsuarioDaSessao(usuario: Usuario): void {
+    guardarUsuario(usuario);
+    avisarQueMudou();
+}
+
+export function encerrarSessao(): void {
+    apagarSessao();
+    avisarQueMudou();
 }
 
 export function lerSessao(agora: number = Date.now()): Sessao | null {
@@ -62,7 +83,7 @@ export function lerSessao(agora: number = Date.now()): Sessao | null {
 
     const expiracao = expiracaoDoToken(token);
     if (expiracao === null || expiracao <= agora) {
-        encerrarSessao();
+        apagarSessao();
         return null;
     }
 
@@ -73,7 +94,7 @@ export function lerSessao(agora: number = Date.now()): Sessao | null {
         usuario = null;
     }
     if (!ehUsuario(usuario)) {
-        encerrarSessao();
+        apagarSessao();
         return null;
     }
     return { token, usuario };
