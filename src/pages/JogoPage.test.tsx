@@ -10,6 +10,11 @@ vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 const get = vi.mocked(api.get);
 
 const MACA_DO_DIA = { dia: "2026-11-03", palavra: "MAÇÃ", categoria: "Comida" };
+const HOJE_NO_SERVIDOR = { dia: "2026-11-03", jogadores: 3, naoAcertaram: 1, distribuicao: [{ letras: 4, jogadores: 2 }] };
+
+function responderComo(servidor: Record<string, unknown>) {
+    get.mockImplementation(async (url: string) => ({ data: servidor[url] }));
+}
 
 function tecla(letra: string): HTMLElement {
     return screen.getByRole("button", { name: letra });
@@ -31,7 +36,7 @@ async function abrirJogo() {
 describe("palavra do dia", () => {
     beforeEach(() => {
         get.mockReset();
-        get.mockResolvedValue({ data: MACA_DO_DIA });
+        responderComo({ "/palavra-do-dia": MACA_DO_DIA, "/palavra-do-dia/estatisticas": HOJE_NO_SERVIDOR });
     });
 
     it("visitante joga sem conta e vê no cabeçalho onde entrar", async () => {
@@ -133,6 +138,40 @@ describe("palavra do dia", () => {
         await abrirJogo();
 
         expect(screen.getByRole("img", { name: "Forca vazia" })).toBeTruthy();
+    });
+
+    it("no fim, mostra como todo mundo foi hoje com a sua coluna destacada", async () => {
+        await abrirJogo();
+
+        for (const letra of "ZMAC") {
+            fireEvent.click(tecla(letra));
+        }
+
+        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        const linhas = within(tabela)
+            .getAllByRole("row")
+            .slice(1)
+            .map((linha) => within(linha).getAllByRole("cell").map((celula) => celula.textContent));
+        expect(linhas).toEqual([
+            ["4 letras (você)", "3"],
+            ["Não acertou", "1"],
+        ]);
+        expect(get).toHaveBeenCalledWith("/palavra-do-dia/estatisticas", { params: { dia: "2026-11-03" } });
+    });
+
+    it("se as estatísticas falharem, o resultado continua na tela", async () => {
+        get.mockImplementation(async (url: string) => {
+            if (url === "/palavra-do-dia") {
+                return { data: MACA_DO_DIA };
+            }
+            throw erroDeRede();
+        });
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect(await screen.findByText("Não deu para carregar como todo mundo foi hoje.")).toBeTruthy();
+        expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
     });
 
     it("servidor fora do ar: avisa e deixa tentar de novo", async () => {

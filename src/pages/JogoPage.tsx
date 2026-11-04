@@ -1,16 +1,18 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { traduzirErro } from "../api/erros";
-import { buscarPalavraDoDia } from "../api/palavraDoDia";
+import { buscarEstatisticasDoDia, buscarPalavraDoDia } from "../api/palavraDoDia";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Forca } from "../componentes/Forca";
+import { GraficoDoDia } from "../componentes/graficos/GraficoDoDia";
 import { Palavra } from "../componentes/Palavra";
 import { ProximaPalavra } from "../componentes/ProximaPalavra";
 import { Teclado } from "../componentes/Teclado";
 import { guardarChutesDoDia, lerChutesDoDia } from "../jogo/chutesDoDia";
+import { colunasDoDia } from "../jogo/histogramaDoDia";
 import { letraBase } from "../jogo/letras";
 import { ERROS_PARA_PERDER, Rodada } from "../jogo/Rodada";
-import type { PalavraDoDia } from "../types/jogo";
+import type { EstatisticasDoDia, PalavraDoDia } from "../types/jogo";
 import "./Jogo.css";
 
 type Carregamento =
@@ -54,6 +56,36 @@ function PainelDoDia({ categoria, erros }: PropsPainel) {
     );
 }
 
+type PropsComoTodoMundoFoi = {
+    dia: string;
+    rodada: Rodada;
+};
+
+function ComoTodoMundoFoi({ dia, rodada }: PropsComoTodoMundoFoi) {
+    const [estatisticas, setEstatisticas] = useState<EstatisticasDoDia | null>(null);
+    const [falhou, setFalhou] = useState(false);
+
+    useEffect(() => {
+        let ativo = true;
+        buscarEstatisticasDoDia(dia).then(
+            (dados) => ativo && setEstatisticas(dados),
+            () => ativo && setFalhou(true),
+        );
+        return () => {
+            ativo = false;
+        };
+    }, [dia]);
+
+    if (falhou) {
+        return <p className="jogo__aviso">Não deu para carregar como todo mundo foi hoje.</p>;
+    }
+    if (!estatisticas) {
+        return null;
+    }
+    const seu = { acertou: rodada.estado === "acertou", chutes: rodada.chutes.length };
+    return <GraficoDoDia colunas={colunasDoDia(estatisticas, seu, { somarSeu: true })} />;
+}
+
 type PropsFim = {
     rodada: Rodada;
     dia: string;
@@ -81,6 +113,7 @@ function FimDoDia({ rodada, dia, aoVirarODia }: PropsFim) {
                     <dd>{rodada.erros}</dd>
                 </div>
             </dl>
+            <ComoTodoMundoFoi dia={dia} rodada={rodada} />
             <ProximaPalavra dia={dia} aoVirarODia={aoVirarODia} />
         </section>
     );
