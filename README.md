@@ -47,6 +47,7 @@ proposta tem conexão com a persona/cliente?**.
 | Item da rubrica | Onde está | Teste que comprova |
 |---|---|---|
 | **Front-end · Autenticação** · campos, regex de e-mail, token no `localStorage`, erros amigáveis, ir para a área logada (`/estatisticas`) | `src/pages/LoginPage.tsx`, `src/sessao/sessao.ts`, `src/validacao/email.ts`, `src/api/axios.ts` (manda o token e encerra a sessão vencida) | `src/pages/LoginPage.test.tsx`, `src/sessao/sessao.test.ts`, `src/api/axios.test.ts` |
+| **Front-end · Edição de Usuário** · contexto com o usuário em toda a aplicação, validação de CPF e de nível de senha, confirmação da senha, e-mail sem alteração | `src/sessao/contexto.ts` e `src/sessao/ProvedorDeSessao.tsx` (o nome do cabeçalho muda na hora), `src/pages/PerfilPage.tsx`, `src/validacao/esquemas.ts` (`esquemaEdicao`) | `src/sessao/ProvedorDeSessao.test.tsx`, `src/pages/PerfilPage.test.tsx` |
 
 ### Exigências da disciplina
 
@@ -93,6 +94,7 @@ Para cadastrar e entrar, o back precisa estar no ar nessa porta.
 | `/login` | Login. Guarda o token no `localStorage` e leva para as estatísticas. |
 | `/jogo` | A palavra do dia, aberta para todo mundo. No fim, como todo mundo foi no dia e, para quem não tem conta, o convite para criar uma. |
 | `/estatisticas` | Só com login (área logada). Resumo, letras por dia com a tendência, histograma das partidas e a lista de partidas. |
+| `/perfil` | Só com login. Editar nome, CPF e senha (com confirmação). O e-mail aparece, mas não pode ser trocado. Fica no nome da pessoa, no cabeçalho. |
 
 ## Como o jogo funciona
 
