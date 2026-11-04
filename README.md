@@ -32,7 +32,8 @@ Para ver todas as marcações de uma vez, busque pelo texto `Rubrica de`:
 | **Front-end · Cadastro de Usuário** · validação de email | `src/validacao/email.ts` | `src/validacao/validacao.test.ts` |
 | **Front-end · Cadastro de Usuário** · redirecionar para o login após o cadastro | `src/pages/CadastroPage.tsx` | `src/pages/CadastroPage.test.tsx` |
 | **Front-end · Cadastro de Usuário** · lidar com as mensagens de erro da API | `src/api/erros.ts`, `src/pages/CadastroPage.tsx` | `src/api/erros.test.ts`, `src/pages/CadastroPage.test.tsx` |
-| **Probabilidade e Estatística · Análise Descritiva** · regressão | `src/jogo/estatistica.ts` (cálculo da regressão). Os gráficos da forca diária chegam com o histograma do dia e a página de estatísticas. | `src/jogo/estatistica.test.ts` |
+| **Probabilidade e Estatística · Análise Descritiva** · histograma | `src/componentes/graficos/GraficoDoDia.tsx` e `src/jogo/histogramaDoDia.ts`: como todo mundo foi no dia, por número de letras chutadas, com a coluna de quem jogou destacada | `src/jogo/histogramaDoDia.test.ts`, `src/pages/JogoPage.test.tsx` |
+| **Probabilidade e Estatística · Análise Descritiva** · regressão | `src/jogo/estatistica.ts` (cálculo da regressão), usada na página de estatísticas | `src/jogo/estatistica.test.ts` |
 | **Tech Forge · Encapsulamento e Proteção do Estado** | Campos privados `#` e construtor limpo em `src/jogo/Rodada.ts` | `src/jogo/Rodada.test.ts` |
 | **Tech Forge · Acesso Controlado e Propriedades** | `src/jogo/Rodada.ts`: só `get`, sem `set`; o estado só muda pela regra do jogo (`chutar`) | `src/jogo/Rodada.test.ts` |
 
@@ -86,9 +87,10 @@ Para cadastrar e entrar, o back precisa estar no ar nessa porta.
 
 | Rota | O que faz |
 |---|---|
+| `/` | Tela de entrada: Jogar, Entrar e Criar conta. |
 | `/cadastro` | Cadastro com nome, e-mail, CPF, senha e confirmação. Depois de criar a conta, leva para o login. |
 | `/login` | Login. Guarda o token no `localStorage` e leva para o jogo. |
-| `/jogo` | Só com login. A palavra do dia. |
+| `/jogo` | A palavra do dia, aberta para todo mundo. No fim, como todo mundo foi no dia e, para quem não tem conta, o convite para criar uma. |
 
 ## Como o jogo funciona
 
