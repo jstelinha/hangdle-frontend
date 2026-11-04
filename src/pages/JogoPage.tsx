@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { buscarEstatisticasDoDia, buscarPalavraDoDia } from "../api/palavraDoDia";
+import { jaEstavaSalvo, salvarResultado } from "../api/resultados";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Forca } from "../componentes/Forca";
@@ -58,12 +59,50 @@ function PainelDoDia({ categoria, erros }: PropsPainel) {
     );
 }
 
+type SituacaoNaConta = "visitante" | "salvando" | "salvo" | "falhou";
+
+function useResultadoNaConta(dia: string, chutes: string[]): SituacaoNaConta {
+    const [situacao, setSituacao] = useState<SituacaoNaConta>(() => (lerSessao() ? "salvando" : "visitante"));
+    const letras = chutes.join("");
+
+    useEffect(() => {
+        if (!lerSessao()) {
+            return;
+        }
+        let ativo = true;
+        salvarResultado(dia, [...letras]).then(
+            () => ativo && setSituacao("salvo"),
+            (erro: unknown) => ativo && setSituacao(jaEstavaSalvo(erro) ? "salvo" : "falhou"),
+        );
+        return () => {
+            ativo = false;
+        };
+    }, [dia, letras]);
+
+    return situacao;
+}
+
+function AvisoDaConta({ situacao }: { situacao: SituacaoNaConta }) {
+    if (situacao === "salvo") {
+        return (
+            <p className="jogo__salvo" role="status">
+                Resultado salvo na sua conta. <Link to="/estatisticas">Ver suas estatísticas</Link>
+            </p>
+        );
+    }
+    if (situacao === "falhou") {
+        return <Aviso mensagem="Não deu para salvar o resultado na sua conta agora. Vamos tentar de novo da próxima vez que você abrir o jogo." />;
+    }
+    return null;
+}
+
 type PropsComoTodoMundoFoi = {
     dia: string;
     rodada: Rodada;
+    jaContado: boolean;
 };
 
-function ComoTodoMundoFoi({ dia, rodada }: PropsComoTodoMundoFoi) {
+function ComoTodoMundoFoi({ dia, rodada, jaContado }: PropsComoTodoMundoFoi) {
     const [estatisticas, setEstatisticas] = useState<EstatisticasDoDia | null>(null);
     const [falhou, setFalhou] = useState(false);
 
@@ -89,9 +128,9 @@ function ComoTodoMundoFoi({ dia, rodada }: PropsComoTodoMundoFoi) {
         <HistogramaDeLetras
             titulo="Como todo mundo foi hoje"
             subtitulo="Quantas pessoas acertaram com cada número de letras chutadas."
-            nota="Só entram as partidas de quem tem conta, mais a sua."
+            nota={jaContado ? "Só entram as partidas de quem tem conta." : "Só entram as partidas de quem tem conta, mais a sua."}
             unidade="jogadores"
-            colunas={colunasPorLetras(somarResultado(estatisticas, seu), seu)}
+            colunas={colunasPorLetras(jaContado ? estatisticas : somarResultado(estatisticas, seu), seu)}
         />
     );
 }
@@ -123,6 +162,7 @@ type PropsFim = {
 
 function FimDoDia({ rodada, dia, aoVirarODia }: PropsFim) {
     const titulo = useFocoAoAparecer<HTMLHeadingElement>();
+    const naConta = useResultadoNaConta(dia, rodada.chutes);
 
     return (
         <section className="secao" aria-labelledby="titulo-fim-do-dia">
@@ -142,8 +182,9 @@ function FimDoDia({ rodada, dia, aoVirarODia }: PropsFim) {
                     <dd>{rodada.erros}</dd>
                 </div>
             </dl>
-            <ComoTodoMundoFoi dia={dia} rodada={rodada} />
-            {!lerSessao() && <ConviteParaCriarConta />}
+            <AvisoDaConta situacao={naConta} />
+            {naConta !== "salvando" && <ComoTodoMundoFoi dia={dia} rodada={rodada} jaContado={naConta === "salvo"} />}
+            {naConta === "visitante" && <ConviteParaCriarConta />}
             <ProximaPalavra dia={dia} aoVirarODia={aoVirarODia} />
         </section>
     );

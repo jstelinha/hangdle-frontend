@@ -42,6 +42,11 @@
     text-align: center;
 }
 
+.jogo__salvo {
+    margin-top: 16px;
+    color: var(--tinta-2);
+}
+
 .jogo__convite {
     margin-top: 28px;
     padding: 16px;

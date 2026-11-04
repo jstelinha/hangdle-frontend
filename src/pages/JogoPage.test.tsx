@@ -4,10 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { SEM_RESPOSTA } from "../api/erros";
 import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
-import { abrir, entrarComo, erroDeRede } from "../testes/ferramentas";
+import { abrir, entrarComo, erroDaApi, erroDeRede } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 const get = vi.mocked(api.get);
+const post = vi.mocked(api.post);
 
 const MACA_DO_DIA = { dia: "2026-11-03", palavra: "MAÇÃ", categoria: "Comida" };
 const HOJE_NO_SERVIDOR = { dia: "2026-11-03", jogadores: 3, naoAcertaram: 1, distribuicao: [{ letras: 4, jogadores: 2 }] };
@@ -36,6 +37,8 @@ async function abrirJogo() {
 describe("palavra do dia", () => {
     beforeEach(() => {
         get.mockReset();
+        post.mockReset();
+        post.mockResolvedValue({ status: 201, data: {} });
         responderComo({ "/palavra-do-dia": MACA_DO_DIA, "/palavra-do-dia/estatisticas": HOJE_NO_SERVIDOR });
     });
 
@@ -157,6 +160,51 @@ describe("palavra do dia", () => {
             ["Não acertou", "1"],
         ]);
         expect(get).toHaveBeenCalledWith("/palavra-do-dia/estatisticas", { params: { dia: "2026-11-03" } });
+    });
+
+    it("quem está logado tem o resultado salvo na conta ao terminar", async () => {
+        entrarComo("Larissa Souza");
+        await abrirJogo();
+
+        for (const letra of "ZMAC") {
+            fireEvent.click(tecla(letra));
+        }
+
+        expect(await screen.findByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
+        expect(post).toHaveBeenCalledWith("/resultados", { dia: "2026-11-03", letras: ["Z", "M", "A", "C"] });
+        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("2");
+    });
+
+    it("resultado que já estava na conta conta como salvo", async () => {
+        post.mockRejectedValueOnce(erroDaApi(409, { mensagem: "Você já jogou a palavra deste dia." }));
+        entrarComo("Larissa Souza");
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect(await screen.findByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
+    });
+
+    it("se não der para salvar na conta, avisa e o seu resultado entra no gráfico", async () => {
+        post.mockRejectedValueOnce(erroDeRede());
+        entrarComo("Larissa Souza");
+        jaChutou("2026-11-03", ["Z", "M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect((await screen.findByRole("alert")).textContent).toContain("Não deu para salvar o resultado na sua conta agora.");
+        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("3");
+    });
+
+    it("visitante não manda nada para a conta", async () => {
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+        await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+
+        expect(post).not.toHaveBeenCalled();
     });
 
     it("no fim, convida o visitante a criar conta", async () => {
