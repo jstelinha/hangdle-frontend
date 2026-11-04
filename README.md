@@ -105,6 +105,10 @@ Para cadastrar e entrar, o back precisa estar no ar nessa porta.
 - Os chutes ficam guardados no `localStorage` a cada letra
   (`src/jogo/chutesDoDia.ts`). Quem recarrega a página continua de onde parou, e
   quem já jogou vê o resultado e quanto falta para a próxima palavra.
+- Quem está logado tem o resultado salvo na conta assim que a partida acaba
+  (`POST /resultados`), e o "já jogou hoje" vem do back, valendo em qualquer
+  aparelho. Quem jogou como visitante e depois entra leva a partida junto
+  (`src/sessao/levarPartidaParaConta.ts`).
 
 ## Testes
 
