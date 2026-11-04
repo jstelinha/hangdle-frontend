@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { SEM_RESPOSTA } from "../api/erros";
+import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
 import { abrir, entrarComo, erroDeRede } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
@@ -16,6 +17,10 @@ function tecla(letra: string): HTMLElement {
 
 function valorDoResumo(rotulo: string): string {
     return screen.getByText(rotulo, { selector: "dt" }).nextElementSibling?.textContent ?? "";
+}
+
+function jaChutou(dia: string, chutes: string[]) {
+    localStorage.setItem(CHAVE_CHUTES_DO_DIA, JSON.stringify({ dia, chutes }));
 }
 
 async function abrirJogo() {
@@ -83,6 +88,42 @@ describe("palavra do dia", () => {
         expect(screen.getByRole("heading", { name: "O boneco ficou completo." })).toBeTruthy();
         expect(screen.getByRole("img", { name: "Forca com o boneco completo" })).toBeTruthy();
         expect(screen.getByText("MAÇÃ")).toBeTruthy();
+    });
+
+    it("cada chute fica guardado no navegador", async () => {
+        await abrirJogo();
+
+        fireEvent.click(tecla("Z"));
+        fireEvent.click(tecla("M"));
+
+        expect(JSON.parse(localStorage.getItem(CHAVE_CHUTES_DO_DIA) ?? "null")).toEqual({ dia: "2026-11-03", chutes: ["Z", "M"] });
+    });
+
+    it("recarregar no meio da partida continua de onde parou", async () => {
+        jaChutou("2026-11-03", ["Z", "M"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
+    });
+
+    it("quem já jogou hoje vê o resultado e quanto falta para a próxima palavra", async () => {
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
+        expect(screen.getByRole("timer").textContent).toMatch(/^Próxima palavra em \d{2}:\d{2}:\d{2}$/);
+        expect(screen.queryByRole("group", { name: "Teclado" })).toBeNull();
+    });
+
+    it("chutes de outro dia não contam", async () => {
+        jaChutou("2026-11-02", ["Z", "M"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("img", { name: "Forca vazia" })).toBeTruthy();
     });
 
     it("servidor fora do ar: avisa e deixa tentar de novo", async () => {

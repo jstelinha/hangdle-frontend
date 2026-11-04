@@ -5,7 +5,9 @@ import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Forca } from "../componentes/Forca";
 import { Palavra } from "../componentes/Palavra";
+import { ProximaPalavra } from "../componentes/ProximaPalavra";
 import { Teclado } from "../componentes/Teclado";
+import { guardarChutesDoDia, lerChutesDoDia } from "../jogo/chutesDoDia";
 import { letraBase } from "../jogo/letras";
 import { ERROS_PARA_PERDER, Rodada } from "../jogo/Rodada";
 import type { PalavraDoDia } from "../types/jogo";
@@ -19,7 +21,8 @@ type Carregamento =
 async function carregarPalavraDoDia(): Promise<Carregamento> {
     try {
         const palavraDoDia = await buscarPalavraDoDia();
-        return { situacao: "pronta", palavraDoDia, rodada: new Rodada(palavraDoDia.palavra) };
+        const chutes = lerChutesDoDia(palavraDoDia.dia) ?? [];
+        return { situacao: "pronta", palavraDoDia, rodada: Rodada.aPartirDosChutes(palavraDoDia.palavra, chutes) };
     } catch (erro) {
         return { situacao: "falhou", mensagem: traduzirErro(erro).mensagem };
     }
@@ -53,9 +56,11 @@ function PainelDoDia({ categoria, erros }: PropsPainel) {
 
 type PropsFim = {
     rodada: Rodada;
+    dia: string;
+    aoVirarODia: () => void;
 };
 
-function FimDoDia({ rodada }: PropsFim) {
+function FimDoDia({ rodada, dia, aoVirarODia }: PropsFim) {
     const titulo = useFocoAoAparecer<HTMLHeadingElement>();
 
     return (
@@ -76,6 +81,7 @@ function FimDoDia({ rodada }: PropsFim) {
                     <dd>{rodada.erros}</dd>
                 </div>
             </dl>
+            <ProximaPalavra dia={dia} aoVirarODia={aoVirarODia} />
         </section>
     );
 }
@@ -100,7 +106,8 @@ export function JogoPage() {
         };
     }, []);
 
-    function tentarDeNovo() {
+    function recarregar() {
+        setAviso("");
         setCarregamento({ situacao: "carregando" });
         carregarPalavraDoDia().then(setCarregamento);
     }
@@ -114,6 +121,7 @@ export function JogoPage() {
             setAviso(`Você já tentou a letra ${letraBase(tecla)}. Letra repetida não conta como erro.`);
         } else if (resultado === "acerto" || resultado === "erro") {
             setAviso("");
+            guardarChutesDoDia(pronta.palavraDoDia.dia, pronta.rodada.chutes);
         }
         setTique((tique) => tique + 1);
     }
@@ -149,7 +157,7 @@ export function JogoPage() {
                 {carregamento.situacao === "falhou" && (
                     <>
                         <Aviso mensagem={carregamento.mensagem} />
-                        <button type="button" className="botao jogo__acao" onClick={tentarDeNovo}>
+                        <button type="button" className="botao jogo__acao" onClick={recarregar}>
                             Tentar de novo
                         </button>
                     </>
@@ -166,7 +174,7 @@ export function JogoPage() {
                         {jogando ? (
                             <Teclado certas={pronta.rodada.letrasCertas} erradas={pronta.rodada.letrasErradas} desativado={false} aoTeclar={teclar} />
                         ) : (
-                            <FimDoDia rodada={pronta.rodada} />
+                            <FimDoDia rodada={pronta.rodada} dia={pronta.palavraDoDia.dia} aoVirarODia={recarregar} />
                         )}
                     </>
                 )}
