@@ -1,5 +1,4 @@
 import { Route, Routes } from "react-router-dom";
-import { RotaProtegida } from "./componentes/RotaProtegida";
 import { CadastroPage } from "./pages/CadastroPage";
 import { InicioPage } from "./pages/InicioPage";
 import { JogoPage } from "./pages/JogoPage";
@@ -13,14 +12,7 @@ export function Rotas() {
             <Route path="/" element={<InicioPage />} />
             <Route path="/cadastro" element={<CadastroPage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route
-                path="/jogo"
-                element={
-                    <RotaProtegida>
-                        <JogoPage />
-                    </RotaProtegida>
-                }
-            />
+            <Route path="/jogo" element={<JogoPage />} />
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );

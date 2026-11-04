@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
@@ -24,7 +24,6 @@ function jaChutou(dia: string, chutes: string[]) {
 }
 
 async function abrirJogo() {
-    entrarComo("Larissa Souza");
     abrir("/jogo");
     await screen.findByText("Comida");
 }
@@ -35,10 +34,20 @@ describe("palavra do dia", () => {
         get.mockResolvedValue({ data: MACA_DO_DIA });
     });
 
-    it("sem sessão volta para o login", () => {
-        abrir("/jogo");
+    it("visitante joga sem conta e vê no cabeçalho onde entrar", async () => {
+        await abrirJogo();
 
-        expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
+        expect(screen.getByRole("heading", { name: "Palavra do dia" })).toBeTruthy();
+        expect(within(screen.getByRole("navigation", { name: "Conta" })).getByRole("link", { name: "Entrar" })).toBeTruthy();
+    });
+
+    it("quem entrou vê o próprio nome no cabeçalho", async () => {
+        entrarComo("Larissa Souza");
+
+        await abrirJogo();
+
+        expect(screen.getByText("Larissa Souza")).toBeTruthy();
+        expect(screen.getByRole("button", { name: "Sair" })).toBeTruthy();
     });
 
     it("busca a palavra no back e começa com a forca e as casas vazias", async () => {
