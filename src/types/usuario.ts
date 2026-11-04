@@ -4,6 +4,10 @@ export type Usuario = {
     email: string;
 };
 
+export type PerfilUsuario = Usuario & {
+    cpf: string;
+};
+
 export type Sessao = {
     token: string;
     usuario: Usuario;
