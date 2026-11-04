@@ -172,7 +172,7 @@ export function JogoPage() {
                             {aviso}
                         </p>
                         {jogando ? (
-                            <Teclado certas={pronta.rodada.letrasCertas} erradas={pronta.rodada.letrasErradas} desativado={false} aoTeclar={teclar} />
+                            <Teclado certas={pronta.rodada.letrasCertas} erradas={pronta.rodada.letrasErradas} aoTeclar={teclar} />
                         ) : (
                             <FimDoDia rodada={pronta.rodada} dia={pronta.palavraDoDia.dia} aoVirarODia={recarregar} />
                         )}

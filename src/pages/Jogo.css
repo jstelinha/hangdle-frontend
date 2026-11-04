@@ -11,18 +11,6 @@
     color: var(--tinta);
 }
 
-.jogo__regras {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 20px;
-    padding-left: 20px;
-}
-
-.jogo__niveis {
-    margin-top: 24px;
-}
-
 .jogo__resumo {
     display: flex;
     flex-wrap: wrap;
@@ -52,10 +40,6 @@
     color: var(--tinta-2);
     font-size: 0.9375rem;
     text-align: center;
-}
-
-.jogo__tabela {
-    margin-top: 16px;
 }
 
 .jogo .secao__titulo:focus,
