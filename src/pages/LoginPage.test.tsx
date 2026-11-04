@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
+import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
 import { abrir, erroDaApi, erroDeRede, tokenQueExpiraEm } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
@@ -74,6 +75,31 @@ describe("tela de login", () => {
         await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
 
         expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível falar com o servidor. Confira sua conexão e tente de novo.");
+    });
+
+    it("a partida jogada antes de entrar vai para a conta", async () => {
+        localStorage.setItem(CHAVE_CHUTES_DO_DIA, JSON.stringify({ dia: "2026-11-03", chutes: ["M", "A", "C"] }));
+        post.mockResolvedValueOnce({ status: 200, data: { token: tokenQueExpiraEm(3600), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } } });
+        const usuario = userEvent.setup();
+        abrir("/login");
+
+        await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
+
+        expect(await screen.findByRole("heading", { name: "Suas estatísticas" })).toBeTruthy();
+        expect(post).toHaveBeenNthCalledWith(2, "/resultados", { dia: "2026-11-03", letras: ["M", "A", "C"] });
+    });
+
+    it("se a partida guardada for recusada, entra do mesmo jeito", async () => {
+        localStorage.setItem(CHAVE_CHUTES_DO_DIA, JSON.stringify({ dia: "2026-11-03", chutes: ["M"] }));
+        post
+            .mockResolvedValueOnce({ status: 200, data: { token: tokenQueExpiraEm(3600), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } } })
+            .mockRejectedValueOnce(erroDaApi(400, { mensagem: "A partida ainda não terminou." }));
+        const usuario = userEvent.setup();
+        abrir("/login");
+
+        await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
+
+        expect(await screen.findByRole("heading", { name: "Suas estatísticas" })).toBeTruthy();
     });
 
     it("sair apaga a sessão e volta para o login", async () => {

@@ -1,6 +1,6 @@
 export const CHAVE_CHUTES_DO_DIA = "hangdle.chutesDoDia";
 
-type ChutesGuardados = {
+export type ChutesGuardados = {
     dia: string;
     chutes: string[];
 };
@@ -25,11 +25,16 @@ export function guardarChutesDoDia(dia: string, chutes: string[]): void {
     }
 }
 
-export function lerChutesDoDia(dia: string): string[] | null {
+export function lerChutesGuardados(): ChutesGuardados | null {
     try {
         const guardados: unknown = JSON.parse(localStorage.getItem(CHAVE_CHUTES_DO_DIA) ?? "null");
-        return ehChutesGuardados(guardados) && guardados.dia === dia ? guardados.chutes : null;
+        return ehChutesGuardados(guardados) ? guardados : null;
     } catch {
         return null;
     }
+}
+
+export function lerChutesDoDia(dia: string): string[] | null {
+    const guardados = lerChutesGuardados();
+    return guardados?.dia === dia ? guardados.chutes : null;
 }
