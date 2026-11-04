@@ -1,7 +1,7 @@
 # Hangdle — front-end
 
-A forca no estilo do Termo. Projeto da Tech Academy de Gabriel Zafani e Julia
-Stela.
+A forca diária: uma palavra por dia, a mesma para todo mundo, e o boneco ganha
+uma parte a cada erro. Projeto da Tech Academy de Gabriel Zafani e Julia Stela.
 
 Vite + React 19 + TypeScript, com `react-router-dom`, `axios`, `zod` e Recharts.
 A API fica em [hangdle-backend](https://github.com/jstelinha/hangdle-backend).
@@ -32,11 +32,9 @@ Para ver todas as marcações de uma vez, busque pelo texto `Rubrica de`:
 | **Front-end · Cadastro de Usuário** · validação de email | `src/validacao/email.ts` | `src/validacao/validacao.test.ts` |
 | **Front-end · Cadastro de Usuário** · redirecionar para o login após o cadastro | `src/pages/CadastroPage.tsx` | `src/pages/CadastroPage.test.tsx` |
 | **Front-end · Cadastro de Usuário** · lidar com as mensagens de erro da API | `src/api/erros.ts`, `src/pages/CadastroPage.tsx` | `src/api/erros.test.ts`, `src/pages/CadastroPage.test.tsx` |
-| **Probabilidade e Estatística · Análise Descritiva** · gráficos adequados ao objetivo (colunas, dispersão e regressão) | `src/componentes/graficos/GraficoPontos.tsx` (colunas), `src/componentes/graficos/GraficoDispersao.tsx` (dispersão com a reta de regressão), `src/jogo/estatistica.ts` (cálculo da regressão) | `src/jogo/estatistica.test.ts`, `src/jogo/partida.test.ts` |
+| **Probabilidade e Estatística · Análise Descritiva** · regressão | `src/jogo/estatistica.ts` (cálculo da regressão). Os gráficos da forca diária chegam com o histograma do dia e a página de estatísticas. | `src/jogo/estatistica.test.ts` |
 | **Tech Forge · Encapsulamento e Proteção do Estado** | Campos privados `#` e construtor limpo em `src/jogo/Rodada.ts` | `src/jogo/Rodada.test.ts` |
-| **Tech Forge · Acesso Controlado e Propriedades** | `src/jogo/Rodada.ts`: só `get`, sem `set`; o estado só muda pelas regras do jogo (`chutar`, `atualizarTempo`) | `src/jogo/Rodada.test.ts` |
-
-Os gráficos aparecem na tela de fim da partida, depois da terceira rodada.
+| **Tech Forge · Acesso Controlado e Propriedades** | `src/jogo/Rodada.ts`: só `get`, sem `set`; o estado só muda pela regra do jogo (`chutar`) | `src/jogo/Rodada.test.ts` |
 
 A persona do projeto (Larissa), com a ligação entre ela e cada parte do jogo,
 está em [PERSONA.md](PERSONA.md). Ela atende o item **Evolução do projeto · a
@@ -90,7 +88,19 @@ Para cadastrar e entrar, o back precisa estar no ar nessa porta.
 |---|---|
 | `/cadastro` | Cadastro com nome, e-mail, CPF, senha e confirmação. Depois de criar a conta, leva para o login. |
 | `/login` | Login. Guarda o token no `localStorage` e leva para o jogo. |
-| `/jogo` | Só com login. Três rodadas (Fácil, Médio, Difícil) e, no fim, o resumo das suas rodadas e os gráficos da partida. |
+| `/jogo` | Só com login. A palavra do dia. |
+
+## Como o jogo funciona
+
+- A palavra do dia vem do back (`GET /palavra-do-dia`) e é a mesma para todo
+  mundo. Ela troca à meia-noite de Brasília.
+- Cada letra chutada revela todas as posições em que ela aparece. Acento e ç não
+  importam: A revela Á, Ã e Â; C revela Ç.
+- Cada letra errada desenha uma parte do boneco (`src/componentes/Forca.tsx`). No
+  sexto erro, o boneco fica completo e a partida acaba.
+- Os chutes ficam guardados no `localStorage` a cada letra
+  (`src/jogo/chutesDoDia.ts`). Quem recarrega a página continua de onde parou, e
+  quem já jogou vê o resultado e quanto falta para a próxima palavra.
 
 ## Testes
 
