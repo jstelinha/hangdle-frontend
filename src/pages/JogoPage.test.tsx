@@ -12,6 +12,11 @@ const post = vi.mocked(api.post);
 
 const MACA_DO_DIA = { dia: "2026-11-03", palavra: "MAÇÃ", categoria: "Comida" };
 const HOJE_NO_SERVIDOR = { dia: "2026-11-03", jogadores: 3, naoAcertaram: 1, distribuicao: [{ letras: 4, jogadores: 2 }] };
+const SERVIDOR = {
+    "/palavra-do-dia": MACA_DO_DIA,
+    "/palavra-do-dia/estatisticas": HOJE_NO_SERVIDOR,
+    "/resultados": { resultados: [] },
+};
 
 function responderComo(servidor: Record<string, unknown>) {
     get.mockImplementation(async (url: string) => ({ data: servidor[url] }));
@@ -39,7 +44,7 @@ describe("palavra do dia", () => {
         get.mockReset();
         post.mockReset();
         post.mockResolvedValue({ status: 201, data: {} });
-        responderComo({ "/palavra-do-dia": MACA_DO_DIA, "/palavra-do-dia/estatisticas": HOJE_NO_SERVIDOR });
+        responderComo(SERVIDOR);
     });
 
     it("visitante joga sem conta e vê no cabeçalho onde entrar", async () => {
@@ -196,6 +201,36 @@ describe("palavra do dia", () => {
         expect((await screen.findByRole("alert")).textContent).toContain("Não deu para salvar o resultado na sua conta agora.");
         const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
         expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("3");
+    });
+
+    it("quem está logado vê do back que já jogou hoje, em qualquer aparelho", async () => {
+        responderComo({
+            ...SERVIDOR,
+            "/resultados": { resultados: [{ ...MACA_DO_DIA, letras: ["M", "A", "C"], chutes: 3, erros: 0, acertou: true }] },
+        });
+        entrarComo("Larissa Souza");
+
+        await abrirJogo();
+
+        expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
+        expect(screen.getByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
+        expect(get).toHaveBeenCalledWith("/resultados", { params: { dia: "2026-11-03" } });
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    it("se o back não responder o histórico, usa os chutes deste navegador", async () => {
+        get.mockImplementation(async (url: string) => {
+            if (url === "/resultados") {
+                throw erroDeRede();
+            }
+            return { data: SERVIDOR[url as keyof typeof SERVIDOR] };
+        });
+        entrarComo("Larissa Souza");
+        jaChutou("2026-11-03", ["Z", "M"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
     });
 
     it("visitante não manda nada para a conta", async () => {

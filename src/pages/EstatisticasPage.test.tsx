@@ -39,7 +39,7 @@ describe("página de estatísticas", () => {
         abrir("/estatisticas");
 
         const tabela = await screen.findByRole("table", { name: "Suas partidas" });
-        expect(get).toHaveBeenCalledWith("/resultados");
+        expect(get.mock.calls[0]?.[0]).toBe("/resultados");
         expect(valorDoResumo("Partidas")).toBe("3");
         expect(valorDoResumo("Acertos")).toBe("67%");
         expect(valorDoResumo("Sequência atual")).toBe("2");

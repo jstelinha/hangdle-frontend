@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { buscarEstatisticasDoDia, buscarPalavraDoDia } from "../api/palavraDoDia";
-import { jaEstavaSalvo, salvarResultado } from "../api/resultados";
+import { buscarHistorico, jaEstavaSalvo, salvarResultado } from "../api/resultados";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Forca } from "../componentes/Forca";
@@ -21,13 +21,31 @@ import "./Jogo.css";
 type Carregamento =
     | { situacao: "carregando" }
     | { situacao: "falhou"; mensagem: string }
-    | { situacao: "pronta"; palavraDoDia: PalavraDoDia; rodada: Rodada };
+    | { situacao: "pronta"; palavraDoDia: PalavraDoDia; rodada: Rodada; salvoNaConta: boolean };
+
+async function chutesSalvosNaConta(dia: string): Promise<string[] | null> {
+    if (!lerSessao()) {
+        return null;
+    }
+    try {
+        const [salvo] = await buscarHistorico(dia);
+        return salvo?.letras ?? null;
+    } catch {
+        return null;
+    }
+}
 
 async function carregarPalavraDoDia(): Promise<Carregamento> {
     try {
         const palavraDoDia = await buscarPalavraDoDia();
-        const chutes = lerChutesDoDia(palavraDoDia.dia) ?? [];
-        return { situacao: "pronta", palavraDoDia, rodada: Rodada.aPartirDosChutes(palavraDoDia.palavra, chutes) };
+        const salvos = await chutesSalvosNaConta(palavraDoDia.dia);
+        const chutes = salvos ?? lerChutesDoDia(palavraDoDia.dia) ?? [];
+        return {
+            situacao: "pronta",
+            palavraDoDia,
+            rodada: Rodada.aPartirDosChutes(palavraDoDia.palavra, chutes),
+            salvoNaConta: salvos !== null,
+        };
     } catch (erro) {
         return { situacao: "falhou", mensagem: traduzirErro(erro).mensagem };
     }
@@ -61,12 +79,19 @@ function PainelDoDia({ categoria, erros }: PropsPainel) {
 
 type SituacaoNaConta = "visitante" | "salvando" | "salvo" | "falhou";
 
-function useResultadoNaConta(dia: string, chutes: string[]): SituacaoNaConta {
-    const [situacao, setSituacao] = useState<SituacaoNaConta>(() => (lerSessao() ? "salvando" : "visitante"));
+function situacaoInicial(salvoNaConta: boolean): SituacaoNaConta {
+    if (!lerSessao()) {
+        return "visitante";
+    }
+    return salvoNaConta ? "salvo" : "salvando";
+}
+
+function useResultadoNaConta(dia: string, chutes: string[], salvoNaConta: boolean): SituacaoNaConta {
+    const [situacao, setSituacao] = useState<SituacaoNaConta>(() => situacaoInicial(salvoNaConta));
     const letras = chutes.join("");
 
     useEffect(() => {
-        if (!lerSessao()) {
+        if (!lerSessao() || salvoNaConta) {
             return;
         }
         let ativo = true;
@@ -77,7 +102,7 @@ function useResultadoNaConta(dia: string, chutes: string[]): SituacaoNaConta {
         return () => {
             ativo = false;
         };
-    }, [dia, letras]);
+    }, [dia, letras, salvoNaConta]);
 
     return situacao;
 }
@@ -157,12 +182,13 @@ function ConviteParaCriarConta() {
 type PropsFim = {
     rodada: Rodada;
     dia: string;
+    salvoNaConta: boolean;
     aoVirarODia: () => void;
 };
 
-function FimDoDia({ rodada, dia, aoVirarODia }: PropsFim) {
+function FimDoDia({ rodada, dia, salvoNaConta, aoVirarODia }: PropsFim) {
     const titulo = useFocoAoAparecer<HTMLHeadingElement>();
-    const naConta = useResultadoNaConta(dia, rodada.chutes);
+    const naConta = useResultadoNaConta(dia, rodada.chutes, salvoNaConta);
 
     return (
         <section className="secao" aria-labelledby="titulo-fim-do-dia">
@@ -278,7 +304,7 @@ export function JogoPage() {
                         {jogando ? (
                             <Teclado certas={pronta.rodada.letrasCertas} erradas={pronta.rodada.letrasErradas} aoTeclar={teclar} />
                         ) : (
-                            <FimDoDia rodada={pronta.rodada} dia={pronta.palavraDoDia.dia} aoVirarODia={recarregar} />
+                            <FimDoDia rodada={pronta.rodada} dia={pronta.palavraDoDia.dia} salvoNaConta={pronta.salvoNaConta} aoVirarODia={recarregar} />
                         )}
                     </>
                 )}
