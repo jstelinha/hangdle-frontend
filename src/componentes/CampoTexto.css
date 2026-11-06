@@ -28,6 +28,12 @@
     border-color: var(--marca);
 }
 
+.campo__entrada:read-only {
+    border-style: dashed;
+    background: var(--fundo);
+    color: var(--tinta-2);
+}
+
 .campo--erro .campo__entrada {
     border-color: var(--perigo);
 }

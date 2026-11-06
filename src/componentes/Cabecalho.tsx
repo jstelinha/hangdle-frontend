@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import { encerrarSessao, lerSessao } from "../sessao/sessao";
+import { useSessao } from "../sessao/contexto";
+import { encerrarSessao } from "../sessao/sessao";
 import { Logotipo } from "./Logotipo";
 import "./Cabecalho.css";
 
 export function Cabecalho() {
     const navegar = useNavigate();
-    const sessao = lerSessao();
+    const sessao = useSessao();
 
     function sair() {
         encerrarSessao();
@@ -22,7 +23,9 @@ export function Cabecalho() {
                     <Link to="/estatisticas" className="cabecalho__link">
                         Estatísticas
                     </Link>
-                    <span className="cabecalho__nome">{sessao.usuario.nome}</span>
+                    <Link to="/perfil" className="cabecalho__nome" title="Seu perfil">
+                        {sessao.usuario.nome}
+                    </Link>
                     <button type="button" className="botao botao--discreto" onClick={sair}>
                         Sair
                     </button>

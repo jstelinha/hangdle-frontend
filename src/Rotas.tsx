@@ -6,6 +6,7 @@ import { InicioPage } from "./pages/InicioPage";
 import { JogoPage } from "./pages/JogoPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { PerfilPage } from "./pages/PerfilPage";
 
 // Rubrica de Exigência - react-router-dom
 export function Rotas() {
@@ -20,6 +21,14 @@ export function Rotas() {
                 element={
                     <RotaProtegida>
                         <EstatisticasPage />
+                    </RotaProtegida>
+                }
+            />
+            <Route
+                path="/perfil"
+                element={
+                    <RotaProtegida>
+                        <PerfilPage />
                     </RotaProtegida>
                 }
             />
