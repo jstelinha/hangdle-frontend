@@ -1,0 +1,38 @@
+.forca {
+    display: block;
+    width: min(180px, 50vw);
+    height: auto;
+    margin: 8px auto 0;
+}
+
+.forca line,
+.forca circle {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+}
+
+.forca__estrutura {
+    stroke: var(--regua-forte);
+}
+
+.forca__parte {
+    stroke: var(--tinta);
+    animation: forca-aparece 200ms ease-out;
+}
+
+.forca--completa .forca__parte {
+    stroke: var(--perigo);
+}
+
+@keyframes forca-aparece {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .forca__parte {
+        animation: none;
+    }
+}
