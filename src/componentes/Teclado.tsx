@@ -4,7 +4,6 @@ import "./Teclado.css";
 type Props = {
     certas: string[];
     erradas: string[];
-    desativado: boolean;
     aoTeclar: (letra: string) => void;
 };
 
@@ -16,7 +15,7 @@ const DESCRICAO: Record<EstadoTecla, string> = {
     errada: ", não está na palavra",
 };
 
-export function Teclado({ certas, erradas, desativado, aoTeclar }: Props) {
+export function Teclado({ certas, erradas, aoTeclar }: Props) {
     function estadoDa(letra: string): EstadoTecla {
         if (certas.includes(letra)) {
             return "certa";
@@ -35,7 +34,7 @@ export function Teclado({ certas, erradas, desativado, aoTeclar }: Props) {
                                 key={letra}
                                 type="button"
                                 className={`tecla tecla--${estado}`}
-                                disabled={desativado || estado !== "livre"}
+                                disabled={estado !== "livre"}
                                 aria-label={`${letra}${DESCRICAO[estado]}`}
                                 onClick={() => aoTeclar(letra)}
                             >

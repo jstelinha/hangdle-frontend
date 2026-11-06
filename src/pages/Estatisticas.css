@@ -1,0 +1,29 @@
+.estatisticas__resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.estatisticas__resumo dt {
+    color: var(--tinta-2);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.estatisticas__resumo dd {
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.estatisticas__partidas {
+    margin-top: 32px;
+}
+
+.estatisticas__partidas caption {
+    font-weight: 700;
+    text-align: left;
+}

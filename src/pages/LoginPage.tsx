@@ -5,6 +5,7 @@ import { traduzirErro } from "../api/erros";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { CampoTexto } from "../componentes/CampoTexto";
+import { levarPartidaParaConta } from "../sessao/levarPartidaParaConta";
 import { salvarSessao } from "../sessao/sessao";
 import type { Sessao } from "../types/usuario";
 import { errosDoFormulario, esquemaLogin, type ErrosDoFormulario, type FormularioLogin } from "../validacao/esquemas";
@@ -57,8 +58,9 @@ export function LoginPage() {
         try {
             const resposta = await api.post<Sessao>("/login", { email: form.email.trim(), senha: form.senha });
             salvarSessao(resposta.data);
+            await levarPartidaParaConta();
             // Rubrica de Front-end - Autenticação - Redirecionar para a área logada
-            navegar("/jogo", { replace: true });
+            navegar("/estatisticas", { replace: true });
         } catch (erro) {
             // Rubrica de Front-end - Autenticação - Lidar com os erros da API de forma amigável para o usuário
             const traduzido = traduzirErro(erro);

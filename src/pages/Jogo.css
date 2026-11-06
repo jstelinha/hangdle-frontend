@@ -1,13 +1,14 @@
-.jogo__regras {
+.jogo__painel {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 24px;
     margin-top: 20px;
-    padding-left: 20px;
+    color: var(--tinta-2);
 }
 
-.jogo__niveis {
-    margin-top: 24px;
+.jogo__painel strong {
+    color: var(--tinta);
 }
 
 .jogo__resumo {
@@ -41,8 +42,32 @@
     text-align: center;
 }
 
-.jogo__tabela {
+.jogo__salvo {
     margin-top: 16px;
+    color: var(--tinta-2);
+}
+
+.jogo__convite {
+    margin-top: 28px;
+    padding: 16px;
+    border: 1px solid var(--regua);
+    background: var(--sucesso-fundo);
+}
+
+.jogo__convite-titulo {
+    font-size: 1rem;
+}
+
+.jogo__convite p {
+    margin-top: 4px;
+    color: var(--tinta-2);
+}
+
+.jogo__convite-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
 }
 
 .jogo .secao__titulo:focus,

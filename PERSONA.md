@@ -1,10 +1,14 @@
 # PERSONA — Hangdle
 
-**Status: confirmada em 28/10/2026.** A imagem é gerada no ChatGPT, com prompt em
-português, em estilo cartoon.
+**Status: confirmada em 28/10/2026, atualizada em 04/11/2026 com os dois modos do
+jogo.** A imagem é gerada no ChatGPT, com prompt em português, em estilo cartoon.
 
-O que ainda pode mudar: a parte sobre dificuldade e rodadas, quando você mandar
-as regras do jogo.
+O Hangdle tem dois modos:
+
+- **Palavra do dia:** a forca clássica, com uma palavra por dia igual para todo
+  mundo e 6 erros até o boneco ficar completo. Não precisa de conta.
+- **Salas:** com conta, para jogar quantas palavras quiser, escolher o tema e o
+  nível e comparar com quem está na mesma sala.
 
 Esta persona sustenta o item **5.1 da RUBRICA** (Evolução do projeto: "A proposta
 desenvolvida tem conexão com a persona/cliente?", 0,50). A tabela "Como o
@@ -57,6 +61,10 @@ quer que a partida caiba nesse tempo.
 
 ### Um dia de uso
 
+Segunda, 7h40, no ônibus. Larissa abre o Hangdle e joga a **palavra do dia**, a
+mesma que os amigos do grupo vão jogar. Acerta com dois erros, vê como todo mundo
+foi naquele dia e, como tem conta, o resultado entra no histórico dela.
+
 Sexta, 21h. Larissa entra no Hangdle, abre a lista de **salas públicas** e
 escolhe uma sala da categoria **Filmes** no nível médio. Os amigos dela entram na
 mesma sala. Cada um joga no próprio ritmo; nada acontece em tempo real. Assim que
@@ -70,13 +78,14 @@ que vai bem em Comida e mal em Geografia, então filtra Geografia para treinar.
 
 | O que ela precisa | Funcionalidade | Item da rubrica ligado |
 |---|---|---|
-| Mais de uma palavra por dia | Quantas rodadas quiser, com palavras novas | Partidas e palavras (os CRUDs ainda serão definidos) |
-| Escolher o tema | Cerca de 10 categorias e filtro por tipo de palavra; "Geral" mistura todas | CRUD de categorias e relacionamento palavra → categoria (1.4.5) |
-| Escolher o desafio | Níveis de dificuldade *(regras a definir)* | Regras do jogo |
-| Jogar com outras pessoas | Salas públicas | CRUD de salas (1.4 / 2.4) |
-| Ver se está melhorando | Gráficos e métricas ao fim de cada rodada | Probabilidade e Estatística — Análise Descritiva (3.1) |
-| Conta com histórico | Cadastro, login e edição de perfil; só joga quem está logado | 1.1–1.3 e 2.1–2.3 |
-| Jogo familiar | Parecido com a forca, com o visual em grade do Termo | Regras do jogo |
+| O ritual do grupo de amigos | Palavra do dia igual para todo mundo, trocando à meia-noite | Regras do jogo |
+| Mais de uma palavra por dia | Salas, com quantas palavras quiser | CRUD de salas (1.4 / 2.4) |
+| Escolher o tema | Categorias de palavras (a palavra do dia mostra a categoria como dica) | CRUD de categorias e relacionamento palavra → categoria (1.4.5) |
+| Escolher o desafio | Níveis de dificuldade nas salas *(regras a definir)* | Regras do jogo |
+| Jogar com outras pessoas | Salas públicas e privadas, com código | CRUD de salas (1.4 / 2.4) |
+| Ver se está melhorando | Histograma de como todo mundo foi no dia; histórico com a sequência de dias e a tendência de letras por dia | Probabilidade e Estatística — Análise Descritiva (3.1) |
+| Conta com histórico | Cadastro, login e edição de perfil; a palavra do dia é aberta, e o histórico e as salas pedem conta | 1.1–1.3 e 2.1–2.3 |
+| Jogo familiar | A forca clássica, com o boneco de 6 partes e o visual em grade do Termo | Regras do jogo |
 | Site limpo, sem anúncio | Design que você vai enviar | Componentização (2.5) |
 
 ---

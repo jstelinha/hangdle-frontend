@@ -1,105 +1,291 @@
-import { act, fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { abrir, entrarComo } from "../testes/ferramentas";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { api } from "../api/axios";
+import { SEM_RESPOSTA } from "../api/erros";
+import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
+import { abrir, entrarComo, erroDaApi, erroDeRede } from "../testes/ferramentas";
+
+vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
+const get = vi.mocked(api.get);
+const post = vi.mocked(api.post);
+
+const MACA_DO_DIA = { dia: "2026-11-03", palavra: "MAÇÃ", categoria: "Comida" };
+const HOJE_NO_SERVIDOR = { dia: "2026-11-03", jogadores: 3, naoAcertaram: 1, distribuicao: [{ letras: 4, jogadores: 2 }] };
+const SERVIDOR = {
+    "/palavra-do-dia": MACA_DO_DIA,
+    "/palavra-do-dia/estatisticas": HOJE_NO_SERVIDOR,
+    "/resultados": { resultados: [] },
+};
+
+function responderComo(servidor: Record<string, unknown>) {
+    get.mockImplementation(async (url: string) => ({ data: servidor[url] }));
+}
 
 function tecla(letra: string): HTMLElement {
     return screen.getByRole("button", { name: letra });
-}
-
-function clicarLetras(letras: string) {
-    for (const letra of letras) {
-        fireEvent.click(tecla(letra));
-    }
-}
-
-function ultimaColuna(tabela: HTMLElement): string[] {
-    return within(tabela)
-        .getAllByRole("row")
-        .slice(1)
-        .map((linha) => within(linha).getAllByRole("cell").at(-1)?.textContent ?? "");
 }
 
 function valorDoResumo(rotulo: string): string {
     return screen.getByText(rotulo, { selector: "dt" }).nextElementSibling?.textContent ?? "";
 }
 
-describe("tela do jogo", () => {
-    afterEach(() => {
-        vi.useRealTimers();
+function jaChutou(dia: string, chutes: string[]) {
+    localStorage.setItem(CHAVE_CHUTES_DO_DIA, JSON.stringify({ dia, chutes }));
+}
+
+async function abrirJogo() {
+    abrir("/jogo");
+    await screen.findByText("Comida");
+}
+
+describe("palavra do dia", () => {
+    beforeEach(() => {
+        get.mockReset();
+        post.mockReset();
+        post.mockResolvedValue({ status: 201, data: {} });
+        responderComo(SERVIDOR);
     });
 
-    it("sem sessão volta para o login", () => {
-        abrir("/jogo");
+    it("visitante joga sem conta e vê no cabeçalho onde entrar", async () => {
+        await abrirJogo();
 
-        expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
+        expect(screen.getByRole("heading", { name: "Palavra do dia" })).toBeTruthy();
+        expect(within(screen.getByRole("navigation", { name: "Conta" })).getByRole("link", { name: "Entrar" })).toBeTruthy();
     });
 
-    it("letra certa revela, errada custa vida e repetida só avisa", async () => {
+    it("quem entrou vê o próprio nome no cabeçalho", async () => {
         entrarComo("Larissa Souza");
-        const usuario = userEvent.setup();
-        abrir("/jogo");
 
-        await usuario.click(screen.getByRole("button", { name: "Começar a rodada 1" }));
-        expect(screen.getByText("Rodada 1 de 3 · Fácil · Comida")).toBeTruthy();
+        await abrirJogo();
+
+        expect(screen.getByText("Larissa Souza")).toBeTruthy();
+        expect(screen.getByRole("button", { name: "Sair" })).toBeTruthy();
+    });
+
+    it("busca a palavra no back e começa com a forca e as casas vazias", async () => {
+        await abrirJogo();
+
+        expect(get).toHaveBeenCalledWith("/palavra-do-dia");
+        expect(screen.getByRole("img", { name: "Forca vazia" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Palavra: vazio, vazio, vazio, vazio" })).toBeTruthy();
+    });
+
+    it("letra certa revela, errada desenha o boneco e repetida só avisa", async () => {
+        const usuario = userEvent.setup();
+        await abrirJogo();
 
         await usuario.click(tecla("M"));
         expect(screen.getByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
 
         await usuario.keyboard("z");
-        expect(screen.getByRole("img", { name: "7 de 8 vidas" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+        expect(screen.getByText("1 de 6")).toBeTruthy();
 
         await usuario.keyboard("z");
         expect(screen.getByText("Você já tentou a letra Z. Letra repetida não conta como erro.")).toBeTruthy();
-        expect(screen.getByRole("img", { name: "7 de 8 vidas" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+    });
 
-        await usuario.click(tecla("A"));
-        expect(screen.getByRole("img", { name: "Palavra: M, A, vazio, Ã" })).toBeTruthy();
+    it("completar a palavra mostra o acerto e em quantas letras", async () => {
+        await abrirJogo();
 
-        await usuario.click(tecla("C"));
-        expect(screen.getByRole("heading", { name: "Você acertou a palavra!" })).toBeTruthy();
+        for (const letra of "ZMAC") {
+            fireEvent.click(tecla(letra));
+        }
+
+        expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
+        expect(valorDoResumo("Letras chutadas")).toBe("4");
+        expect(valorDoResumo("Erros")).toBe("1");
         expect(screen.queryByRole("group", { name: "Teclado" })).toBeNull();
     });
 
-    it("o relógio encerra a rodada quando o tempo acaba", () => {
-        vi.useFakeTimers();
-        entrarComo("Larissa Souza");
-        abrir("/jogo");
+    it("no sexto erro o boneco fica completo e a palavra aparece", async () => {
+        await abrirJogo();
 
-        fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 1" }));
-        act(() => {
-            vi.advanceTimersByTime(120_000);
-        });
+        for (const letra of "ZWYKLB") {
+            fireEvent.click(tecla(letra));
+        }
 
-        expect(screen.getByRole("heading", { name: "O tempo acabou." })).toBeTruthy();
+        expect(screen.getByRole("heading", { name: "O boneco ficou completo." })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Forca com o boneco completo" })).toBeTruthy();
         expect(screen.getByText("MAÇÃ")).toBeTruthy();
     });
 
-    it("partida completa: só as suas rodadas, sem bônus de primeiro e sem nada simulado", () => {
-        vi.useFakeTimers();
+    it("cada chute fica guardado no navegador", async () => {
+        await abrirJogo();
+
+        fireEvent.click(tecla("Z"));
+        fireEvent.click(tecla("M"));
+
+        expect(JSON.parse(localStorage.getItem(CHAVE_CHUTES_DO_DIA) ?? "null")).toEqual({ dia: "2026-11-03", chutes: ["Z", "M"] });
+    });
+
+    it("recarregar no meio da partida continua de onde parou", async () => {
+        jaChutou("2026-11-03", ["Z", "M"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
+    });
+
+    it("quem já jogou hoje vê o resultado e quanto falta para a próxima palavra", async () => {
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
+        expect(screen.getByRole("timer").textContent).toMatch(/^Próxima palavra em \d{2}:\d{2}:\d{2}$/);
+        expect(screen.queryByRole("group", { name: "Teclado" })).toBeNull();
+    });
+
+    it("chutes de outro dia não contam", async () => {
+        jaChutou("2026-11-02", ["Z", "M"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("img", { name: "Forca vazia" })).toBeTruthy();
+    });
+
+    it("no fim, mostra como todo mundo foi hoje com a sua coluna destacada", async () => {
+        await abrirJogo();
+
+        for (const letra of "ZMAC") {
+            fireEvent.click(tecla(letra));
+        }
+
+        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        const linhas = within(tabela)
+            .getAllByRole("row")
+            .slice(1)
+            .map((linha) => within(linha).getAllByRole("cell").map((celula) => celula.textContent));
+        expect(linhas).toEqual([
+            ["4 letras (você)", "3"],
+            ["Não acertou", "1"],
+        ]);
+        expect(get).toHaveBeenCalledWith("/palavra-do-dia/estatisticas", { params: { dia: "2026-11-03" } });
+    });
+
+    it("quem está logado tem o resultado salvo na conta ao terminar", async () => {
+        entrarComo("Larissa Souza");
+        await abrirJogo();
+
+        for (const letra of "ZMAC") {
+            fireEvent.click(tecla(letra));
+        }
+
+        expect(await screen.findByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
+        expect(post).toHaveBeenCalledWith("/resultados", { dia: "2026-11-03", letras: ["Z", "M", "A", "C"] });
+        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("2");
+    });
+
+    it("resultado que já estava na conta conta como salvo", async () => {
+        post.mockRejectedValueOnce(erroDaApi(409, { mensagem: "Você já jogou a palavra deste dia." }));
+        entrarComo("Larissa Souza");
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect(await screen.findByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
+    });
+
+    it("se não der para salvar na conta, avisa e o seu resultado entra no gráfico", async () => {
+        post.mockRejectedValueOnce(erroDeRede());
+        entrarComo("Larissa Souza");
+        jaChutou("2026-11-03", ["Z", "M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect((await screen.findByRole("alert")).textContent).toContain("Não deu para salvar o resultado na sua conta agora.");
+        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("3");
+    });
+
+    it("quem está logado vê do back que já jogou hoje, em qualquer aparelho", async () => {
+        responderComo({
+            ...SERVIDOR,
+            "/resultados": { resultados: [{ ...MACA_DO_DIA, letras: ["M", "A", "C"], chutes: 3, erros: 0, acertou: true }] },
+        });
+        entrarComo("Larissa Souza");
+
+        await abrirJogo();
+
+        expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
+        expect(screen.getByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
+        expect(get).toHaveBeenCalledWith("/resultados", { params: { dia: "2026-11-03" } });
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    it("se o back não responder o histórico, usa os chutes deste navegador", async () => {
+        get.mockImplementation(async (url: string) => {
+            if (url === "/resultados") {
+                throw erroDeRede();
+            }
+            return { data: SERVIDOR[url as keyof typeof SERVIDOR] };
+        });
+        entrarComo("Larissa Souza");
+        jaChutou("2026-11-03", ["Z", "M"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+    });
+
+    it("visitante não manda nada para a conta", async () => {
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+        await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    it("no fim, convida o visitante a criar conta", async () => {
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        const convite = within(screen.getByRole("complementary", { name: "Guarde seus resultados" }));
+        expect(convite.getByRole("link", { name: "Criar conta" }).getAttribute("href")).toBe("/cadastro");
+        expect(convite.getByRole("link", { name: "Entrar" }).getAttribute("href")).toBe("/login");
+    });
+
+    it("quem já tem conta não vê o convite", async () => {
+        entrarComo("Larissa Souza");
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect(screen.queryByRole("complementary", { name: "Guarde seus resultados" })).toBeNull();
+    });
+
+    it("se as estatísticas falharem, o resultado continua na tela", async () => {
+        get.mockImplementation(async (url: string) => {
+            if (url === "/palavra-do-dia") {
+                return { data: MACA_DO_DIA };
+            }
+            throw erroDeRede();
+        });
+        jaChutou("2026-11-03", ["M", "A", "C"]);
+
+        await abrirJogo();
+
+        expect(await screen.findByText("Não deu para carregar como todo mundo foi hoje.")).toBeTruthy();
+        expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
+    });
+
+    it("servidor fora do ar: avisa e deixa tentar de novo", async () => {
+        get.mockRejectedValueOnce(erroDeRede());
+        const usuario = userEvent.setup();
         entrarComo("Larissa Souza");
         abrir("/jogo");
 
-        fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 1" }));
-        clicarLetras("MAC");
-        expect(valorDoResumo("Pontos")).toBe("340");
-        fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 2" }));
-        clicarLetras("ABCXI");
-        expect(valorDoResumo("Pontos")).toBe("420");
-        fireEvent.click(screen.getByRole("button", { name: "Começar a rodada 3" }));
-        clicarLetras("PAODEQUIJ");
-        expect(valorDoResumo("Pontos")).toBe("410");
-        fireEvent.click(screen.getByRole("button", { name: "Ver o resultado da partida" }));
+        expect((await screen.findByRole("alert")).textContent).toBe(SEM_RESPOSTA);
 
-        expect(screen.getByRole("heading", { name: "Fim da partida" })).toBeTruthy();
-        expect(screen.getByText("Você acertou 3 de 3 palavras e fez 1170 pontos.")).toBeTruthy();
+        await usuario.click(screen.getByRole("button", { name: "Tentar de novo" }));
 
-        const suasRodadas = screen.getByRole("table", { name: "Suas rodadas" });
-        expect(ultimaColuna(suasRodadas)).toEqual(["340", "420", "410", "1170"]);
-
-        const grafico = screen.getByRole("table", { name: "Seus pontos por rodada" });
-        expect(ultimaColuna(grafico)).toEqual(["340", "420", "410"]);
-
-        expect(screen.queryByText(/simulad|rivais/i)).toBeNull();
+        expect(await screen.findByText("Comida")).toBeTruthy();
     });
 });

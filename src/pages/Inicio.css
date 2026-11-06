@@ -1,0 +1,25 @@
+.inicio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 48px;
+    text-align: center;
+}
+
+.inicio .titulo {
+    margin-top: 28px;
+}
+
+.inicio__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.inicio__dica {
+    margin-top: 20px;
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+}

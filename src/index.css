@@ -155,6 +155,7 @@ a {
     background: var(--marca);
     color: var(--marca-tinta);
     font-weight: 600;
+    text-decoration: none;
     cursor: pointer;
 }
 

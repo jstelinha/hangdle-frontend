@@ -1,0 +1,10 @@
+.proxima-palavra {
+    margin-top: 20px;
+    color: var(--tinta-2);
+}
+
+.proxima-palavra strong {
+    color: var(--tinta);
+    font-size: 1.25rem;
+    font-variant-numeric: tabular-nums;
+}
