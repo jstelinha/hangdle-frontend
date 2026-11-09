@@ -156,7 +156,7 @@ function NovaSala() {
 
     async function criar(dados: DadosSala) {
         const sala = await salas.criar(dados);
-        navegar("/salas?filtro=minhas", comAviso(`Sala ${sala.nome} criada.`));
+        navegar(`/salas/${sala.id}`, comAviso(`Sala ${sala.nome} criada. Copie o link do convite e chame o pessoal.`));
     }
 
     return (
@@ -179,7 +179,7 @@ function EditarSala({ id }: { id: number }) {
 
     async function editar(dados: DadosSala) {
         const sala = await salas.editar(id, dados);
-        navegar("/salas?filtro=minhas", comAviso(`Sala ${sala.nome} salva.`));
+        navegar(`/salas/${sala.id}`, comAviso(`Sala ${sala.nome} salva.`));
     }
 
     return (

@@ -28,3 +28,49 @@
     color: var(--tinta-2);
     font-size: 0.8125rem;
 }
+
+.sala__dados {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.sala__dados dt {
+    color: var(--tinta-2);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sala__dados dd {
+    font-weight: 600;
+}
+
+.sala__convite {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.sala__convite .campo {
+    flex: 1 1 260px;
+}
+
+.sala__convite .botao {
+    min-height: 44px;
+    margin-top: 28px;
+}
+
+.sala__recado {
+    margin-top: 12px;
+    color: var(--tinta-2);
+    font-size: 0.875rem;
+}
+
+.sala__entrar {
+    margin-top: 16px;
+}

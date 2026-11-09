@@ -11,6 +11,7 @@ const put = vi.mocked(api.put);
 
 const LISTAS = { itens: [{ id: 3, nome: "Animais", totalDePalavras: 12 }], pagina: 1, porPagina: 50, total: 1, totalDePaginas: 1 };
 const SALAS = { itens: [], pagina: 1, porPagina: 10, total: 0, totalDePaginas: 0 };
+const JOGADORES = { itens: [{ id: 1, salaId: 5, usuarioId: 7, apelido: "Larissa", pontos: 0, dono: true }], pagina: 1, porPagina: 10, total: 1, totalDePaginas: 1 };
 const SALA = {
     id: 5,
     donoId: 7,
@@ -26,7 +27,7 @@ const SALA = {
 
 function responder(sala: object = SALA) {
     get.mockImplementation((url: string) => {
-        const respostas: Record<string, unknown> = { "/listas": LISTAS, "/salas": SALAS, "/salas/5": sala };
+        const respostas: Record<string, unknown> = { "/listas": LISTAS, "/salas": SALAS, "/salas/5": sala, "/salas/5/participantes": JOGADORES };
         return Promise.resolve({ data: respostas[url] });
     });
 }
@@ -85,7 +86,8 @@ describe("criação de sala", () => {
             maximoDeJogadores: 6,
             senha: null,
         });
-        expect(await screen.findByText("Sala Forca da turma criada.")).toBeTruthy();
+        expect(await screen.findByText("Sala Forca da turma criada. Copie o link do convite e chame o pessoal.")).toBeTruthy();
+        expect(await screen.findByRole("heading", { name: "Forca da turma" })).toBeTruthy();
     });
 
     it("cria uma sala com senha, lista e outras escolhas", async () => {

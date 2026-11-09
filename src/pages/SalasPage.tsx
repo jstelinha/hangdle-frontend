@@ -10,16 +10,11 @@ import { TopoDaPagina } from "../componentes/TopoDaPagina";
 import { useAvisoDaNavegacao } from "../hooks/useAvisoDaNavegacao";
 import { useListagem } from "../hooks/useListagem";
 import { useSessao } from "../sessao/contexto";
-import type { FiltroDasSalas, Sala, SituacaoDaSala } from "../types/sala";
+import { resumoDaSala } from "../salas/descricao";
+import type { FiltroDasSalas, Sala } from "../types/sala";
 import "./Salas.css";
 
 const COLUNAS: Coluna[] = [{ titulo: "Sala" }, { titulo: "Jogadores", tipo: "numero" }, { titulo: "Ações", tipo: "acoes" }];
-
-const SITUACAO: Record<SituacaoDaSala, string> = {
-    esperando: "Esperando jogadores",
-    jogando: "Jogando",
-    encerrada: "Encerrada",
-};
 
 const ABAS: { filtro: FiltroDasSalas; rotulo: string; endereco: string }[] = [
     { filtro: "abertas", rotulo: "Abertas", endereco: "/salas" },
@@ -28,11 +23,6 @@ const ABAS: { filtro: FiltroDasSalas; rotulo: string; endereco: string }[] = [
 
 function legenda(total: number): string {
     return total === 1 ? "1 sala" : `${total} salas`;
-}
-
-function resumoDaSala(sala: Sala): string {
-    const rodadas = sala.rodadas === 1 ? "1 rodada" : `${sala.rodadas} rodadas`;
-    return [`${rodadas} de ${sala.segundosPorRodada} s`, sala.privada ? "com senha" : null, SITUACAO[sala.situacao]].filter(Boolean).join(" · ");
 }
 
 function AbasDasSalas({ filtro }: { filtro: FiltroDasSalas }) {

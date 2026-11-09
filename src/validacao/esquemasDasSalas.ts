@@ -62,3 +62,21 @@ export function esquemaSala(jaTemSenha: boolean) {
 }
 
 export type FormularioSala = z.input<ReturnType<typeof esquemaSala>>;
+
+const apelido = textoObrigatorio(APELIDO, "Escolha um apelido.", `O apelido precisa ter de ${APELIDO.minimo} a ${APELIDO.maximo} caracteres.`);
+
+// Rubrica de Front-end - Cruds Completos - Validação dos campos obrigatórios
+export function esquemaEntrada(salaComSenha: boolean) {
+    return z.object({
+        apelido,
+        senha: z
+            .string()
+            .refine((senha) => !salaComSenha || senha !== "", "Digite a senha da sala.")
+            .transform((senha) => (salaComSenha ? senha : null)),
+    });
+}
+
+export const esquemaApelido = z.object({ apelido });
+
+export type FormularioEntrada = z.input<ReturnType<typeof esquemaEntrada>>;
+export type FormularioApelido = z.input<typeof esquemaApelido>;
