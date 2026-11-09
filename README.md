@@ -48,6 +48,9 @@ proposta tem conexão com a persona/cliente?**.
 |---|---|---|
 | **Front-end · Autenticação** · campos, regex de e-mail, token no `localStorage`, erros amigáveis, ir para a área logada (`/estatisticas`) | `src/pages/LoginPage.tsx`, `src/sessao/sessao.ts`, `src/validacao/email.ts`, `src/api/axios.ts` (manda o token e encerra a sessão vencida) | `src/pages/LoginPage.test.tsx`, `src/sessao/sessao.test.ts`, `src/api/axios.test.ts` |
 | **Front-end · Edição de Usuário** · contexto com o usuário em toda a aplicação, validação de CPF e de nível de senha, confirmação da senha, e-mail sem alteração | `src/sessao/contexto.ts` e `src/sessao/ProvedorDeSessao.tsx` (o nome do cabeçalho muda na hora), `src/pages/PerfilPage.tsx`, `src/validacao/esquemas.ts` (`esquemaEdicao`) | `src/sessao/ProvedorDeSessao.test.tsx`, `src/pages/PerfilPage.test.tsx` |
+| **Front-end · Cruds Completos** · listagem e cadastro/edição em telas separadas, paginação, validação dos campos obrigatórios. Prontos: listas e palavras; salas e participantes chegam na próxima branch | Listagens em `src/pages/ListasPage.tsx` e `src/pages/PalavrasPage.tsx`; cadastro e edição em `src/pages/FormularioListaPage.tsx` e `src/pages/FormularioPalavraPage.tsx`; a página fica no endereço (`?pagina=2`) por `src/hooks/useListagem.ts` e `src/componentes/Paginacao.tsx`; as regras dos campos em `src/validacao/esquemasDasListas.ts`, aplicadas por `src/hooks/useFormulario.ts` | `src/pages/ListasPage.test.tsx`, `src/pages/FormularioListaPage.test.tsx`, `src/pages/PalavrasPage.test.tsx`, `src/pages/FormularioPalavraPage.test.tsx`, `src/componentes/Paginacao.test.tsx` |
+| **Front-end · Componentização** · componentes genéricos, telas feitas de vários componentes, componentes e páginas em pastas separadas, componentes exclusivos de uma página em funções separadas | Genéricos em `src/componentes/`: `TabelaPaginada` (listagem de qualquer recurso), `Paginacao`, `AcoesDaLinha` (editar e apagar com confirmação), `Formulario`, `Carregado`, `TopoDaPagina`, `CampoTexto` e `Aviso`. Telas em `src/pages/`. Exclusivos: `LinhaDaLista` em `ListasPage.tsx`, `LinhaDaPalavra` em `PalavrasPage.tsx` | `src/componentes/AcoesDaLinha.test.tsx`, `src/componentes/Paginacao.test.tsx` e os testes das páginas |
+| **Tech Forge · Tipagem Avançada e Recursos do TypeScript** · generics para reaproveitar código tipado | `src/types/pagina.ts` (`Pagina<T>`), `src/api/recursos.ts` (`recursosDaApi<Recurso, Dados>`, as cinco rotas de qualquer CRUD), `src/componentes/TabelaPaginada.tsx` (`TabelaPaginada<T>`), `src/hooks/useCarregamento.ts` e `src/hooks/useFormulario.ts` (os tipos saem do esquema do zod) | `src/api/recursos.test.ts` |
 
 ### Exigências da disciplina
 
@@ -95,6 +98,13 @@ Para cadastrar e entrar, o back precisa estar no ar nessa porta.
 | `/jogo` | A palavra do dia, aberta para todo mundo. No fim, como todo mundo foi no dia e, para quem não tem conta, o convite para criar uma. |
 | `/estatisticas` | Só com login (área logada). Resumo, letras por dia com a tendência, histograma das partidas e a lista de partidas. |
 | `/perfil` | Só com login. Editar nome, CPF e senha (com confirmação). O e-mail aparece, mas não pode ser trocado. Fica no nome da pessoa, no cabeçalho. |
+| `/listas` | Só com login. As listas de palavras da pessoa, em páginas, com quantas palavras cada uma tem. Editar e apagar ficam em cada linha; apagar pede confirmação e leva as palavras junto. |
+| `/listas/nova` e `/listas/:id/editar` | Só com login. Nome da lista, de 2 a 40 caracteres, sem repetir. Depois de criar, leva para as palavras da lista nova. |
+| `/listas/:listaId/palavras` | Só com login. As palavras da lista, em páginas, com a dica de cada uma. |
+| `/listas/:listaId/palavras/nova` e `/listas/:listaId/palavras/:id/editar` | Só com login. Palavra (de 3 a 30 letras, escrita em maiúsculas enquanto se digita) e dica opcional. Ao criar, o formulário fica limpo para a próxima palavra. |
+
+Quem está logado vê no cabeçalho o menu Jogar, Listas e Estatísticas. As telas
+com login ficam juntas em `src/Rotas.tsx`, dentro de `RotaProtegida`.
 
 ## Como o jogo funciona
 
