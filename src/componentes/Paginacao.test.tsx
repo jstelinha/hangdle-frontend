@@ -54,6 +54,14 @@ describe("paginação", () => {
         expect(screen.getByRole("status").textContent).toBe("/listas");
     });
 
+    it("mantém os filtros do endereço ao trocar de página", async () => {
+        const usuario = userEvent.setup();
+        abrirNa("/listas?filtro=minhas&pagina=2", 2, 3);
+
+        await usuario.click(screen.getByRole("link", { name: "Próxima" }));
+        expect(screen.getByRole("status").textContent).toBe("/listas?filtro=minhas&pagina=3");
+    });
+
     it("de uma página que não existe mais, vai para a última", () => {
         abrirNa("/listas?pagina=4", 4, 3);
 

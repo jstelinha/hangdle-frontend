@@ -33,6 +33,33 @@ describe("ações da linha", () => {
         expect(aoApagar).toHaveBeenCalledOnce();
     });
 
+    it("aceita outros nomes para as ações, como sair da sala", async () => {
+        const aoApagar = vi.fn(() => Promise.resolve());
+        const usuario = userEvent.setup();
+        render(
+            <MemoryRouter>
+                <AcoesDaLinha nome="Lari" editarEm="/salas/5/participantes/2/editar" rotuloDeEditar="Trocar apelido" aoApagar={aoApagar} rotuloDeApagar="Sair" />
+            </MemoryRouter>,
+        );
+
+        expect(screen.getByRole("link", { name: "Trocar apelido Lari" })).toBeTruthy();
+        await usuario.click(screen.getByRole("button", { name: "Sair Lari" }));
+        await usuario.click(screen.getByRole("button", { name: "Sim, sair" }));
+
+        expect(aoApagar).toHaveBeenCalledOnce();
+    });
+
+    it("sem aoApagar, mostra só o editar", () => {
+        render(
+            <MemoryRouter>
+                <AcoesDaLinha nome="Animais" editarEm="/listas/3/editar" />
+            </MemoryRouter>,
+        );
+
+        expect(screen.getByRole("link", { name: "Editar Animais" })).toBeTruthy();
+        expect(screen.queryByRole("button")).toBeNull();
+    });
+
     it("desistir volta para os botões sem apagar", async () => {
         const aoApagar = vi.fn(() => Promise.resolve());
         const usuario = userEvent.setup();

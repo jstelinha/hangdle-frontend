@@ -5,18 +5,20 @@ import "./AcoesDaLinha.css";
 type Props = {
     nome: string;
     editarEm?: string;
-    aoApagar: () => Promise<void>;
+    rotuloDeEditar?: string;
+    aoApagar?: () => Promise<void>;
+    rotuloDeApagar?: string;
 };
 
-// Editar e apagar uma linha da listagem. Apagar pede confirmação antes de chamar a API.
-export function AcoesDaLinha({ nome, editarEm, aoApagar }: Props) {
+// Editar e apagar uma linha da listagem. Apagar (ou sair, ou tirar) pede confirmação antes de chamar a API.
+export function AcoesDaLinha({ nome, editarEm, rotuloDeEditar = "Editar", aoApagar, rotuloDeApagar = "Apagar" }: Props) {
     const [confirmando, setConfirmando] = useState(false);
     const [apagando, setApagando] = useState(false);
     const botaoApagar = useRef<HTMLButtonElement>(null);
     const botaoNao = useRef<HTMLButtonElement>(null);
     const jaPerguntou = useRef(false);
 
-    // O foco vai para o "Não" quando a pergunta aparece e volta para o "Apagar" quando ela some.
+    // O foco vai para o "Não" quando a pergunta aparece e volta para o botão de apagar quando ela some.
     useEffect(() => {
         if (confirmando) {
             jaPerguntou.current = true;
@@ -27,6 +29,9 @@ export function AcoesDaLinha({ nome, editarEm, aoApagar }: Props) {
     }, [confirmando]);
 
     async function apagar() {
+        if (!aoApagar) {
+            return;
+        }
         setApagando(true);
         try {
             await aoApagar();
@@ -38,10 +43,10 @@ export function AcoesDaLinha({ nome, editarEm, aoApagar }: Props) {
 
     if (confirmando) {
         return (
-            <div className="acoes" role="group" aria-label={`Apagar ${nome}?`}>
-                <span className="acoes__pergunta">Apagar?</span>
+            <div className="acoes" role="group" aria-label={`${rotuloDeApagar} ${nome}?`}>
+                <span className="acoes__pergunta">{rotuloDeApagar}?</span>
                 <button type="button" className="botao botao--discreto acoes__apagar" onClick={apagar} disabled={apagando}>
-                    {apagando ? "Apagando..." : "Sim, apagar"}
+                    {apagando ? "Um momento..." : `Sim, ${rotuloDeApagar.toLocaleLowerCase("pt-BR")}`}
                 </button>
                 <button ref={botaoNao} type="button" className="botao botao--discreto" onClick={() => setConfirmando(false)} disabled={apagando}>
                     Não
@@ -53,13 +58,21 @@ export function AcoesDaLinha({ nome, editarEm, aoApagar }: Props) {
     return (
         <div className="acoes">
             {editarEm && (
-                <Link to={editarEm} className="botao botao--discreto" aria-label={`Editar ${nome}`}>
-                    Editar
+                <Link to={editarEm} className="botao botao--discreto" aria-label={`${rotuloDeEditar} ${nome}`}>
+                    {rotuloDeEditar}
                 </Link>
             )}
-            <button ref={botaoApagar} type="button" className="botao botao--discreto" onClick={() => setConfirmando(true)} aria-label={`Apagar ${nome}`}>
-                Apagar
-            </button>
+            {aoApagar && (
+                <button
+                    ref={botaoApagar}
+                    type="button"
+                    className="botao botao--discreto"
+                    onClick={() => setConfirmando(true)}
+                    aria-label={`${rotuloDeApagar} ${nome}`}
+                >
+                    {rotuloDeApagar}
+                </button>
+            )}
         </div>
     );
 }
