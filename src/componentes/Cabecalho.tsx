@@ -8,6 +8,7 @@ function Menu() {
     return (
         <nav className="cabecalho__menu" aria-label="Principal">
             <NavLink to="/jogo">Jogar</NavLink>
+            <NavLink to="/salas">Salas</NavLink>
             <NavLink to="/listas">Listas</NavLink>
             <NavLink to="/estatisticas">Estatísticas</NavLink>
         </nav>

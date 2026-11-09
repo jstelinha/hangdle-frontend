@@ -4,6 +4,7 @@ import { CadastroPage } from "./pages/CadastroPage";
 import { EstatisticasPage } from "./pages/EstatisticasPage";
 import { FormularioListaPage } from "./pages/FormularioListaPage";
 import { FormularioPalavraPage } from "./pages/FormularioPalavraPage";
+import { FormularioSalaPage } from "./pages/FormularioSalaPage";
 import { InicioPage } from "./pages/InicioPage";
 import { JogoPage } from "./pages/JogoPage";
 import { ListasPage } from "./pages/ListasPage";
@@ -11,6 +12,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { PalavrasPage } from "./pages/PalavrasPage";
 import { PerfilPage } from "./pages/PerfilPage";
+import { SalasPage } from "./pages/SalasPage";
 
 // Rubrica de Exigência - react-router-dom
 export function Rotas() {
@@ -29,6 +31,9 @@ export function Rotas() {
                 <Route path="/listas/:listaId/palavras" element={<PalavrasPage />} />
                 <Route path="/listas/:listaId/palavras/nova" element={<FormularioPalavraPage />} />
                 <Route path="/listas/:listaId/palavras/:id/editar" element={<FormularioPalavraPage />} />
+                <Route path="/salas" element={<SalasPage />} />
+                <Route path="/salas/nova" element={<FormularioSalaPage />} />
+                <Route path="/salas/:id/editar" element={<FormularioSalaPage />} />
             </Route>
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
