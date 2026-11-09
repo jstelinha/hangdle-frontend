@@ -52,17 +52,20 @@ export type FormularioEdicao = z.infer<typeof esquemaEdicao>;
 export type FormularioLogin = z.infer<typeof esquemaLogin>;
 export type ErrosDoFormulario<T> = Partial<Record<keyof T, string>>;
 
-export function errosDoFormulario<T extends z.ZodType>(esquema: T, valores: unknown): ErrosDoFormulario<z.infer<T>> {
-    const resultado = esquema.safeParse(valores);
-    if (resultado.success) {
-        return {};
-    }
+type Problema = { path: PropertyKey[]; message: string };
+
+export function errosDosProblemas<T>(problemas: readonly Problema[]): ErrosDoFormulario<T> {
     const erros: Record<string, string> = {};
-    for (const problema of resultado.error.issues) {
+    for (const problema of problemas) {
         const campo = problema.path[0];
         if (typeof campo === "string" && !(campo in erros)) {
             erros[campo] = problema.message;
         }
     }
-    return erros as ErrosDoFormulario<z.infer<T>>;
+    return erros as ErrosDoFormulario<T>;
+}
+
+export function errosDoFormulario<T extends z.ZodType>(esquema: T, valores: unknown): ErrosDoFormulario<z.infer<T>> {
+    const resultado = esquema.safeParse(valores);
+    return resultado.success ? {} : errosDosProblemas<z.infer<T>>(resultado.error.issues);
 }
