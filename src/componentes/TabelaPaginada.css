@@ -1,0 +1,19 @@
+.tabela-paginada {
+    margin-top: 24px;
+}
+
+.tabela-paginada td {
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+
+.tabela-paginada .tabela__acoes {
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.tabela-paginada__vazia {
+    margin-top: 24px;
+    color: var(--tinta-2);
+}

@@ -1,0 +1,18 @@
+.acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.acoes__pergunta {
+    color: var(--tinta-2);
+    font-size: 0.875rem;
+}
+
+.acoes .acoes__apagar {
+    border-color: var(--perigo);
+    background: var(--perigo-fundo);
+    color: var(--perigo);
+}
