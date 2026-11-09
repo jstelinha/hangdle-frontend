@@ -70,16 +70,20 @@ describe("cadastro de lista", () => {
         expect(screen.getByText("O nome da lista precisa ter de 2 a 40 caracteres.")).toBeTruthy();
     });
 
-    it("cria sem os espaços sobrando e volta para a listagem", async () => {
-        post.mockResolvedValueOnce({ data: { id: 9, nome: "Frutas tropicais", totalDePalavras: 0 } });
+    it("cria sem os espaços sobrando e leva para as palavras da lista nova", async () => {
+        const nova = { id: 9, nome: "Frutas tropicais", totalDePalavras: 0 };
+        const semPalavras = { itens: [], pagina: 1, porPagina: 10, total: 0, totalDePaginas: 0 };
+        post.mockResolvedValueOnce({ data: nova });
+        get.mockImplementation((url: string) => Promise.resolve({ data: url === "/listas/9" ? nova : semPalavras }));
         const usuario = userEvent.setup();
         await abrirFormulario("/listas/nova");
 
         await salvarCom(usuario, "  Frutas   tropicais ");
 
         expect(post).toHaveBeenCalledWith("/listas", { nome: "Frutas tropicais" });
-        expect((await screen.findByRole("status")).textContent).toBe("Lista Frutas tropicais criada.");
-        expect(screen.getByRole("heading", { name: "Suas listas" })).toBeTruthy();
+        expect(await screen.findByText("Lista Frutas tropicais criada. Agora acrescente as palavras.")).toBeTruthy();
+        expect(await screen.findByRole("heading", { name: "Frutas tropicais" })).toBeTruthy();
+        expect(get).toHaveBeenCalledWith("/listas/9/palavras", { params: { pagina: 1 } });
     });
 
     it("mostra no campo o nome repetido recusado pela API", async () => {

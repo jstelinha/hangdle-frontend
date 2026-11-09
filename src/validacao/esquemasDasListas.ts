@@ -24,3 +24,32 @@ export const esquemaLista = z.object({
 });
 
 export type FormularioLista = z.input<typeof esquemaLista>;
+
+// As mesmas regras do back (src/esquemas/palavraDaLista.ts e o CHECK de mysql/06-listas.sql).
+export const PALAVRA = { minimo: 3, maximo: 30 };
+export const DICA = { minimo: 2, maximo: 80 };
+const FORMATO_DA_PALAVRA = /^[A-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ]+([ -][A-ZÁÀÂÃÉÊÍÓÔÕÚÜÇ]+)*$/;
+
+export function emMaiusculas(texto: string): string {
+    return texto.normalize("NFC").toLocaleUpperCase("pt-BR");
+}
+
+// Rubrica de Front-end - Cruds Completos - Validação dos campos obrigatórios
+export const esquemaPalavra = z.object({
+    palavra: z
+        .string()
+        .transform((texto) => emMaiusculas(semEspacosSobrando(texto)))
+        .refine((palavra) => palavra !== "", "Informe a palavra.")
+        .refine(
+            (palavra) => palavra === "" || entre(palavra, PALAVRA),
+            `A palavra precisa ter de ${PALAVRA.minimo} a ${PALAVRA.maximo} letras.`,
+        )
+        .refine((palavra) => palavra === "" || FORMATO_DA_PALAVRA.test(palavra), "Use só letras, com espaço ou hífen entre as partes."),
+    dica: z
+        .string()
+        .transform(semEspacosSobrando)
+        .refine((dica) => dica === "" || entre(dica, DICA), `A dica precisa ter de ${DICA.minimo} a ${DICA.maximo} caracteres.`)
+        .transform((dica) => (dica === "" ? null : dica)),
+});
+
+export type FormularioPalavra = z.input<typeof esquemaPalavra>;

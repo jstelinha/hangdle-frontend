@@ -58,7 +58,7 @@ function NovaLista() {
 
     async function criar(dados: DadosLista) {
         const lista = await listas.criar(dados);
-        navegar("/listas", comAviso(`Lista ${lista.nome} criada.`));
+        navegar(`/listas/${lista.id}/palavras`, comAviso(`Lista ${lista.nome} criada. Agora acrescente as palavras.`));
     }
 
     return (
