@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import type { Carregamento } from "../hooks/useCarregamento";
 import type { Pagina } from "../types/pagina";
-import { Aviso } from "./Aviso";
+import { Carregado } from "./Carregado";
 import { Paginacao } from "./Paginacao";
 import "./TabelaPaginada.css";
 
@@ -37,40 +37,32 @@ function Cabeca({ coluna }: { coluna: Coluna }) {
 // Rubrica de Front-end - Componentização - Componentes genéricos e reutilizáveis
 // A listagem dos CRUDs: carregando, erro, nenhum item, a tabela e as páginas.
 export function TabelaPaginada<T extends { id: number }>({ carregamento, legenda, colunas, carregando, vazia, children }: Props<T>) {
-    if (carregamento.situacao === "carregando") {
-        return (
-            <p role="status" className="tabela-paginada__recado">
-                {carregando}
-            </p>
-        );
-    }
-    if (carregamento.situacao === "falhou") {
-        return <Aviso mensagem={carregamento.mensagem} />;
-    }
-
-    const { itens, pagina, total, totalDePaginas } = carregamento.dados;
     return (
-        <>
-            {itens.length === 0 ? (
-                <div className="tabela-paginada__recado">{vazia}</div>
-            ) : (
-                <table className="tabela tabela-paginada">
-                    <caption>{legenda(total)}</caption>
-                    <thead>
-                        <tr>
-                            {colunas.map((coluna) => (
-                                <Cabeca key={coluna.titulo} coluna={coluna} />
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {itens.map((item) => (
-                            <Fragment key={item.id}>{children(item)}</Fragment>
-                        ))}
-                    </tbody>
-                </table>
+        <Carregado carregamento={carregamento} carregando={carregando}>
+            {({ itens, pagina, total, totalDePaginas }) => (
+                <>
+                    {itens.length === 0 ? (
+                        <div className="tabela-paginada__vazia">{vazia}</div>
+                    ) : (
+                        <table className="tabela tabela-paginada">
+                            <caption>{legenda(total)}</caption>
+                            <thead>
+                                <tr>
+                                    {colunas.map((coluna) => (
+                                        <Cabeca key={coluna.titulo} coluna={coluna} />
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {itens.map((item) => (
+                                    <Fragment key={item.id}>{children(item)}</Fragment>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                    <Paginacao pagina={pagina} totalDePaginas={totalDePaginas} />
+                </>
             )}
-            <Paginacao pagina={pagina} totalDePaginas={totalDePaginas} />
-        </>
+        </Carregado>
     );
 }

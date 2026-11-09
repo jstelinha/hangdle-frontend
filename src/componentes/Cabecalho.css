@@ -1,10 +1,13 @@
 .cabecalho {
+    border-bottom: 1px solid var(--regua);
+}
+
+.cabecalho__linha {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     min-height: 64px;
-    border-bottom: 1px solid var(--regua);
 }
 
 .cabecalho__marca {
@@ -19,16 +22,35 @@
     min-width: 0;
 }
 
-.cabecalho__link {
-    color: var(--marca);
-    font-size: 0.9375rem;
-    font-weight: 600;
-}
-
 .cabecalho__nome {
     overflow: hidden;
     color: var(--tinta-2);
     font-size: 0.9375rem;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.cabecalho__menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 20px;
+    padding-bottom: 10px;
+}
+
+.cabecalho__menu a {
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cabecalho__menu a:hover {
+    color: var(--tinta);
+}
+
+.cabecalho__menu a[aria-current="page"] {
+    border-bottom-color: var(--marca);
+    color: var(--marca);
 }

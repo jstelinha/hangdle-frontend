@@ -1,14 +1,10 @@
-import type { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useSessao } from "../sessao/contexto";
 
-type Props = {
-    children: ReactNode;
-};
-
-export function RotaProtegida({ children }: Props) {
+// As rotas dentro desta só abrem com login; sem login, vão para a tela de entrar.
+export function RotaProtegida() {
     if (!useSessao()) {
         return <Navigate to="/login" replace />;
     }
-    return children;
+    return <Outlet />;
 }
