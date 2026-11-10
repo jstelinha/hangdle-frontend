@@ -13,6 +13,7 @@ import { ListasPage } from "./pages/ListasPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { PalavrasPage } from "./pages/PalavrasPage";
+import { PartidaPage } from "./pages/PartidaPage";
 import { PerfilPage } from "./pages/PerfilPage";
 import { SalaPage } from "./pages/SalaPage";
 import { SalasPage } from "./pages/SalasPage";
@@ -39,6 +40,7 @@ export function Rotas() {
                 <Route path="/salas/:id/editar" element={<FormularioSalaPage />} />
                 <Route path="/salas/:id" element={<SalaPage />} />
                 <Route path="/salas/:id/entrar" element={<EntrarNaSalaPage />} />
+                <Route path="/salas/:id/partida" element={<PartidaPage />} />
                 <Route path="/salas/:salaId/participantes/:id/editar" element={<FormularioApelidoPage />} />
             </Route>
             <Route path="*" element={<NotFoundPage />} />

@@ -16,6 +16,12 @@ import { useSessao } from "../sessao/contexto";
 import type { Participante, Sala } from "../types/sala";
 import "./Salas.css";
 
+const IR_PARA_A_PARTIDA: Record<Sala["situacao"], string> = {
+    esperando: "Ir para a partida",
+    jogando: "Ir para a partida",
+    encerrada: "Ver o placar final",
+};
+
 const COLUNAS: Coluna[] = [{ titulo: "Jogador" }, { titulo: "Pontos", tipo: "numero" }, { titulo: "Ações", tipo: "acoes" }];
 
 function legenda(total: number): string {
@@ -190,6 +196,13 @@ export function SalaPage() {
                             )}
                         </TabelaPaginada>
                         {souDonoDaSala && <p className="sala__recado">Quem criou a sala não sai dela. Para acabar com a sala, apague a sala na lista de salas.</p>}
+                        {sala && dosParticipantes.situacao === "pronta" && (
+                            <p className="sala__entrar">
+                                <Link to={`/salas/${sala.id}/partida`} className="botao">
+                                    {IR_PARA_A_PARTIDA[sala.situacao]}
+                                </Link>
+                            </p>
+                        )}
                         {sala && dosParticipantes.situacao === "pronta" && <Convite sala={sala} />}
                     </>
                 )}

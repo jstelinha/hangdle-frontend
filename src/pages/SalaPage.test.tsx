@@ -62,6 +62,7 @@ describe("página da sala", () => {
         expect(within(tabela).getByText("2 jogadores")).toBeTruthy();
         expect(within(tabela).getByText("você · criou a sala")).toBeTruthy();
         expect(get).toHaveBeenCalledWith("/salas/5/participantes", { params: { pagina: 1 } });
+        expect(screen.getByRole("link", { name: "Ir para a partida" }).getAttribute("href")).toBe("/salas/5/partida");
     });
 
     it("cada um troca o próprio apelido; quem criou a sala não sai, mas tira os outros", async () => {

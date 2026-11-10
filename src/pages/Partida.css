@@ -1,0 +1,110 @@
+.partida__rodada {
+    margin-top: 16px;
+    color: var(--tinta-2);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.partida__recado {
+    margin-top: 12px;
+    color: var(--tinta-2);
+}
+
+.partida__acao {
+    margin-top: 20px;
+}
+
+.partida__voce {
+    color: var(--tinta-2);
+}
+
+.partida__espera {
+    margin-top: 16px;
+    padding-left: 20px;
+}
+
+.partida__espera li {
+    padding: 2px 0;
+}
+
+.partida__opcoes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.partida__opcao {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    min-height: 72px;
+    padding: 12px;
+    border: 1px solid var(--regua-forte);
+    background: var(--superficie);
+    color: var(--tinta);
+    font-size: 1.125rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.partida__opcao:hover:not(:disabled) {
+    border-color: var(--marca);
+}
+
+.partida__dica-da-opcao {
+    color: var(--tinta-2);
+    font-size: 0.875rem;
+}
+
+.partida__formulario {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.partida__formulario .botao {
+    align-self: flex-start;
+}
+
+.partida__forcas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.partida__forca {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.partida__apelido {
+    font-weight: 600;
+}
+
+.partida__progresso {
+    color: var(--tinta-2);
+    font-size: 0.8125rem;
+}
+
+.partida__vencedor {
+    margin-top: 12px;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.jogo .tabela {
+    margin-top: 20px;
+}
