@@ -1,0 +1,42 @@
+.placar {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--regua);
+}
+
+.placar__titulo {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.placar__lista {
+    margin-top: 12px;
+    padding: 0;
+    list-style: none;
+}
+
+.placar__linha {
+    display: grid;
+    grid-template-columns: 3ch 1fr auto;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--regua);
+}
+
+.placar__linha--destaque {
+    font-weight: 700;
+}
+
+.placar__posicao {
+    color: var(--tinta-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.placar__voce {
+    color: var(--tinta-2);
+    font-weight: 400;
+}
+
+.placar__pontos {
+    font-variant-numeric: tabular-nums;
+}

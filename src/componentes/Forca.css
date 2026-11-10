@@ -5,6 +5,11 @@
     margin: 8px auto 0;
 }
 
+.forca--pequena {
+    width: 64px;
+    margin: 0 auto;
+}
+
 .forca line,
 .forca circle {
     fill: none;

@@ -19,26 +19,31 @@ function emLista(nomes: string[]): string {
     return nomes.length > 1 ? `${nomes.slice(0, -1).join(", ")} e ${nomes.at(-1)}` : nomes.join("");
 }
 
-function descrever(desenhadas: Parte[]): string {
+function descrever(desenhadas: Parte[], de?: string): string {
+    const forca = de ? `Forca de ${de}` : "Forca";
     if (desenhadas.length === 0) {
-        return "Forca vazia";
+        return `${forca} vazia`;
     }
     if (desenhadas.length === PARTES.length) {
-        return "Forca com o boneco completo";
+        return `${forca} com o boneco completo`;
     }
-    return `Forca com ${emLista(desenhadas.map((parte) => parte.nome))}`;
+    return `${forca} com ${emLista(desenhadas.map((parte) => parte.nome))}`;
 }
 
 type Props = {
     erros: number;
+    // Pequena e com o nome de quem joga, a forca mostra os outros jogadores da sala.
+    pequena?: boolean;
+    de?: string;
 };
 
-export function Forca({ erros }: Props) {
+export function Forca({ erros, pequena = false, de }: Props) {
     const desenhadas = PARTES.slice(0, Math.max(0, erros));
     const completa = desenhadas.length === PARTES.length;
+    const classes = ["forca", pequena ? "forca--pequena" : null, completa ? "forca--completa" : null].filter(Boolean).join(" ");
 
     return (
-        <svg className={completa ? "forca forca--completa" : "forca"} viewBox="0 0 200 220" role="img" aria-label={descrever(desenhadas)}>
+        <svg className={classes} viewBox="0 0 200 220" role="img" aria-label={descrever(desenhadas, de)}>
             <g className="forca__estrutura">
                 <line x1="20" y1="205" x2="120" y2="205" />
                 <line x1="50" y1="205" x2="50" y2="20" />

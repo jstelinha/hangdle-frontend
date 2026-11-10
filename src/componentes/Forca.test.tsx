@@ -29,6 +29,13 @@ describe("forca", () => {
         expect(container.querySelector(".forca--completa")).toBeTruthy();
     });
 
+    it("na versão pequena, diz de quem é a forca", () => {
+        const { container } = render(<Forca erros={2} pequena de="Bru" />);
+
+        expect(screen.getByRole("img", { name: "Forca de Bru com cabeça e tronco" })).toBeTruthy();
+        expect(container.querySelector(".forca--pequena")).toBeTruthy();
+    });
+
     it("não passa de 6 partes", () => {
         const { container } = render(<Forca erros={9} />);
 
