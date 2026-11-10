@@ -31,6 +31,7 @@ function camposDoCorpo(corpo: Record<string, unknown>): Record<string, string> {
     return campos;
 }
 
+// Rubrica de Tech Forge - Tratamento de Exceções e Organização do Código - Todo erro da API passa por aqui e vira uma mensagem em português
 // Rubrica de Front-end - Cadastro de Usuário - Lidar com as mensagens de erro da API
 // Rubrica de Front-end - Autenticação - Lidar com os erros da API de forma amigável para o usuário
 export function traduzirErro(erro: unknown): ErroDaApi {

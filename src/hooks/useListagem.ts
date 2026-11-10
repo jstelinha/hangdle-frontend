@@ -12,6 +12,7 @@ function lerPagina(texto: string | null): number {
 
 // Rubrica de Front-end - Cruds Completos - Paginação das listagens
 // A página fica no endereço (?pagina=2), então recarregar e voltar continuam nela.
+// Rubrica de Tech Forge - Aderência aos Princípios SOLID - Inversão de dependência: o hook recebe a função que lista, e não sabe se é a API de verdade ou a dos testes
 export function useListagem<T>(listar: (pagina: number) => Promise<Pagina<T>>) {
     const [parametros] = useSearchParams();
     const pagina = lerPagina(parametros.get("pagina"));

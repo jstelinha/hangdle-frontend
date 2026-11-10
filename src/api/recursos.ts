@@ -12,6 +12,7 @@ export type Recursos<Recurso, Dados> = {
 };
 
 // Rubrica de Tech Forge - Tipagem Avançada e Recursos do TypeScript - Generics para reaproveitar código tipado
+// Rubrica de Tech Forge - Aderência aos Princípios SOLID - Aberto para extensão: as salas e os participantes entraram como mais um recursosDaApi, sem mudar esta função
 // As cinco rotas de um CRUD do back, iguais para listas, palavras, salas e participantes.
 export function recursosDaApi<Recurso, Dados>(caminho: string): Recursos<Recurso, Dados> {
     return {

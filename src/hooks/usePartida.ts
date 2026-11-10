@@ -11,6 +11,7 @@ function naoAdiantaTentarDeNovo(erro: unknown): boolean {
     return axios.isAxiosError(erro) && [401, 403, 404].includes(erro.response?.status ?? 0);
 }
 
+// Rubrica de Tech Forge - Aderência aos Princípios SOLID - Responsabilidade única: o hook só acompanha a partida; a PartidaPage só desenha
 // Pergunta pela partida a cada segundo, até ela acabar. O back é quem faz a partida andar e quem conta o tempo.
 export function usePartida(salaId: number) {
     const [estado, setEstado] = useState<EstadoDaPartida | null>(null);
