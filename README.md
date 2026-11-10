@@ -49,8 +49,8 @@ proposta tem conexão com a persona/cliente?**.
 | **Front-end · Autenticação** · campos, regex de e-mail, token no `localStorage`, erros amigáveis, ir para a área logada (`/estatisticas`) | `src/pages/LoginPage.tsx`, `src/sessao/sessao.ts`, `src/validacao/email.ts`, `src/api/axios.ts` (manda o token e encerra a sessão vencida) | `src/pages/LoginPage.test.tsx`, `src/sessao/sessao.test.ts`, `src/api/axios.test.ts` |
 | **Front-end · Edição de Usuário** · contexto com o usuário em toda a aplicação, validação de CPF e de nível de senha, confirmação da senha, e-mail sem alteração | `src/sessao/contexto.ts` e `src/sessao/ProvedorDeSessao.tsx` (o nome do cabeçalho muda na hora), `src/pages/PerfilPage.tsx`, `src/validacao/esquemas.ts` (`esquemaEdicao`) | `src/sessao/ProvedorDeSessao.test.tsx`, `src/pages/PerfilPage.test.tsx` |
 | **Front-end · Cruds Completos** · 4 CRUDs (listas, palavras, salas e participantes), listagem e cadastro/edição em telas separadas, paginação, validação dos campos obrigatórios | Listagens em `src/pages/ListasPage.tsx`, `src/pages/PalavrasPage.tsx`, `src/pages/SalasPage.tsx` e `src/pages/SalaPage.tsx` (os participantes); cadastro e edição em `src/pages/FormularioListaPage.tsx`, `src/pages/FormularioPalavraPage.tsx`, `src/pages/FormularioSalaPage.tsx`, `src/pages/EntrarNaSalaPage.tsx` e `src/pages/FormularioApelidoPage.tsx`; a página fica no endereço (`?pagina=2`) por `src/hooks/useListagem.ts` e `src/componentes/Paginacao.tsx`; as regras dos campos em `src/validacao/esquemasDasListas.ts` e `src/validacao/esquemasDasSalas.ts`, aplicadas por `src/hooks/useFormulario.ts` | Os testes de cada uma dessas páginas (`*Page.test.tsx`) e `src/componentes/Paginacao.test.tsx` |
-| **Front-end · Componentização** · componentes genéricos, telas feitas de vários componentes, componentes e páginas em pastas separadas, componentes exclusivos de uma página em funções separadas | Genéricos em `src/componentes/`: `TabelaPaginada` (listagem de qualquer recurso), `Paginacao`, `AcoesDaLinha` (editar e apagar, sair ou tirar, com confirmação), `Formulario`, `Carregado`, `TopoDaPagina`, `CampoTexto`, `CampoEscolha` e `Aviso`. Telas em `src/pages/`. Exclusivos: `LinhaDaLista`, `LinhaDaPalavra`, `LinhaDaSala`, `AbasDasSalas`, `DadosDaSala`, `Convite` e `LinhaDoParticipante`, cada um no arquivo da sua página | `src/componentes/AcoesDaLinha.test.tsx`, `src/componentes/Paginacao.test.tsx` e os testes das páginas |
-| **Tech Forge · Tipagem Avançada e Recursos do TypeScript** · generics para reaproveitar código tipado, tipos derivados de listas de valores | `src/types/pagina.ts` (`Pagina<T>`), `src/api/recursos.ts` (`recursosDaApi<Recurso, Dados>`, as cinco rotas de qualquer CRUD), `src/componentes/TabelaPaginada.tsx` (`TabelaPaginada<T>`), `src/hooks/useCarregamento.ts` e `src/hooks/useFormulario.ts` (os tipos saem do esquema do zod), `src/types/sala.ts` (`SegundosPorRodada` sai do `as const`) | `src/api/recursos.test.ts` |
+| **Front-end · Componentização** · componentes genéricos, telas feitas de vários componentes, componentes e páginas em pastas separadas, componentes exclusivos de uma página em funções separadas | Genéricos em `src/componentes/`: `TabelaPaginada` (listagem de qualquer recurso), `Paginacao`, `AcoesDaLinha` (editar e apagar, sair ou tirar, com confirmação), `Formulario`, `Carregado`, `TopoDaPagina`, `CampoTexto`, `CampoEscolha`, `Aviso`, `Placar`, `Cronometro` e `Forca` (a mesma do jogo do dia, pequena e com o nome de cada jogador na sala). A tela da partida (`src/pages/PartidaPage.tsx`) junta `Forca`, `Palavra`, `Teclado`, `Cronometro` e `Placar`. Telas em `src/pages/`. Exclusivos: `LinhaDaLista`, `LinhaDaPalavra`, `LinhaDaSala`, `AbasDasSalas`, `DadosDaSala`, `Convite`, `LinhaDoParticipante` e, na partida, `SalaDeEspera`, `EscolherPalavra`, `MinhaForcaNaVez`, `ForcasDosJogadores`, `ResultadoDaVezAnterior` e `FimDaPartida`, cada um no arquivo da sua página | `src/componentes/AcoesDaLinha.test.tsx`, `src/componentes/Paginacao.test.tsx`, `src/componentes/Placar.test.tsx`, `src/componentes/Cronometro.test.tsx` e os testes das páginas |
+| **Tech Forge · Tipagem Avançada e Recursos do TypeScript** · generics para reaproveitar código tipado, tipos derivados de listas de valores | `src/types/pagina.ts` (`Pagina<T>`), `src/api/recursos.ts` (`recursosDaApi<Recurso, Dados>`, as cinco rotas de qualquer CRUD), `src/componentes/TabelaPaginada.tsx` (`TabelaPaginada<T>`), `src/hooks/useCarregamento.ts` e `src/hooks/useFormulario.ts` (os tipos saem do esquema do zod), `src/types/sala.ts` (`SegundosPorRodada` sai do `as const`), `src/types/partida.ts` (`EscolhaDaPalavra`, união da palavra escolhida da lista ou digitada; `Pick` no resultado da vez) | `src/api/recursos.test.ts`, `src/pages/PartidaPage.test.tsx` |
 
 ### Exigências da disciplina
 
@@ -106,6 +106,7 @@ Para cadastrar e entrar, o back precisa estar no ar nessa porta.
 | `/salas/nova` e `/salas/:id/editar` | Só com login. Nome, lista de palavras (opcional), tempo de cada rodada, rodadas, máximo de jogadores e quem pode entrar: qualquer pessoa ou só com senha. Na edição, deixar a senha vazia mantém a senha atual. Só quem criou edita, e só antes da partida começar. |
 | `/salas/:id` | Só com login. Os dados da sala e os jogadores, em páginas. Cada um troca o próprio apelido e sai; quem criou a sala tira os outros. Tem o link do convite com o botão de copiar. Quem ainda não está na sala vê o botão de entrar. |
 | `/salas/:id/entrar` | Só com login. O endereço do convite: apelido (começa com o primeiro nome da conta) e a senha, se a sala tiver. |
+| `/salas/:id/partida` | Só com login e para quem está na sala. A partida: a espera (quem criou começa, com pelo menos 2 jogadores), a escolha da palavra (uma de 3 da lista, ou digitada), a própria forca com o teclado, o bonequinho de cada jogador, o resultado de cada palavra, o placar e o placar final. A página da sala tem o botão para chegar aqui. |
 | `/salas/:salaId/participantes/:id/editar` | Só com login. Trocar o próprio apelido na sala. |
 
 Quem está logado vê no cabeçalho o menu Jogar, Salas, Listas e Estatísticas. As telas
@@ -126,6 +127,19 @@ com login ficam juntas em `src/Rotas.tsx`, dentro de `RotaProtegida`.
   (`POST /resultados`), e o "já jogou hoje" vem do back, valendo em qualquer
   aparelho. Quem jogou como visitante e depois entra leva a partida junto
   (`src/sessao/levarPartidaParaConta.ts`).
+
+## Como a partida na sala funciona
+
+- Em cada rodada, cada jogador escolhe uma palavra, na ordem em que entrou na
+  sala, e os outros adivinham ao mesmo tempo, cada um na própria forca.
+- A palavra fica no back. Quem adivinha recebe só as casas que já abriu, e cada
+  letra vai para o back conferir (`POST /salas/:salaId/partida/letras`).
+- A tela pergunta pela partida a cada segundo (`src/hooks/usePartida.ts`), e o
+  back conta o tempo: 20 s para escolher, o tempo da sala para adivinhar e 5 s
+  para mostrar como foi cada palavra. Se ninguém escolher, o back sorteia. A
+  tela ignora uma resposta antiga que chegue depois de uma nova.
+- Acertar vale 100 pontos, menos 10 por erro, e o primeiro a acertar ganha mais
+  20. Quem escolheu ganha 10 por pessoa que acertou.
 
 ## Testes
 
