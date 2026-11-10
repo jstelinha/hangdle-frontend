@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./axios";
 import { listas, palavrasDaLista } from "./listas";
+import { participantesDaSala, salas } from "./salas";
 
 vi.mock("./axios", () => ({ api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 const get = vi.mocked(api.get);
@@ -38,6 +39,22 @@ describe("rotas de um CRUD do back", () => {
         expect(post).toHaveBeenCalledWith("/listas", { nome: "Animais" });
         expect(put).toHaveBeenCalledWith("/listas/3", { nome: "Bichos" });
         expect(apagar).toHaveBeenCalledWith("/listas/3");
+    });
+
+    it("manda os filtros junto com a página", async () => {
+        get.mockResolvedValueOnce({ data: {} });
+
+        await salas.listar(3, { filtro: "minhas" });
+
+        expect(get).toHaveBeenCalledWith("/salas", { params: { filtro: "minhas", pagina: 3 } });
+    });
+
+    it("põe os participantes dentro da sala", async () => {
+        post.mockResolvedValueOnce({ data: {} });
+
+        await participantesDaSala(5).criar({ apelido: "Lari", senha: "gato" });
+
+        expect(post).toHaveBeenCalledWith("/salas/5/participantes", { apelido: "Lari", senha: "gato" });
     });
 
     it("põe as palavras dentro da lista", async () => {
