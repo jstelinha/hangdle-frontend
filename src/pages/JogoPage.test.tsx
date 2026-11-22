@@ -1,25 +1,60 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { SEM_RESPOSTA } from "../api/erros";
 import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
+import { Rodada } from "../jogo/Rodada";
 import { abrir, entrarComo, erroDaApi, erroDeRede } from "../testes/ferramentas";
+import type { JogoDoDia } from "../types/jogo";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 const get = vi.mocked(api.get);
 const post = vi.mocked(api.post);
 
-const MACA_DO_DIA = { dia: "2026-11-03", palavra: "MAÇÃ", categoria: "Comida" };
-const HOJE_NO_SERVIDOR = { dia: "2026-11-03", jogadores: 3, naoAcertaram: 1, distribuicao: [{ letras: 4, jogadores: 2 }] };
+const DIA = "2026-11-03";
+const PALAVRA = "MAÇÃ";
+const MACA_DO_DIA = { dia: DIA, palavra: PALAVRA, categoria: "Comida" };
+const HOJE_NO_SERVIDOR = { dia: DIA, jogadores: 3, naoAcertaram: 1, distribuicao: [{ letras: 4, jogadores: 2 }] };
+
+// Um back de mentira com a mesma regra do de verdade: o token leva as letras, e a palavra só vem no fim.
+function jogoCom(letras: string[]): JogoDoDia {
+    const rodada = Rodada.aPartirDosChutes(PALAVRA, letras);
+    const terminou = rodada.estado !== "jogando";
+    return {
+        dia: DIA,
+        categoria: "Comida",
+        casas: rodada.casas.map((casa) => (casa.revelada ? casa.caractere : null)),
+        letras: rodada.chutes,
+        erros: rodada.erros,
+        acertou: rodada.estado === "acertou",
+        terminou,
+        palavra: terminou ? PALAVRA : null,
+        token: JSON.stringify(rodada.chutes),
+    };
+}
+
 const SERVIDOR = {
-    "/palavra-do-dia": MACA_DO_DIA,
+    "/palavra-do-dia": jogoCom([]),
     "/palavra-do-dia/estatisticas": HOJE_NO_SERVIDOR,
     "/resultados": { resultados: [] },
 };
 
+// O que o POST /resultados responde: 201, ou o erro que o teste escolher.
+let aoSalvar: () => Promise<unknown>;
+// As palavras que o back mandou antes do fim, para conferir que nenhuma foi mandada.
+let palavrasAntesDoFim: (string | null)[];
+
 function responderComo(servidor: Record<string, unknown>) {
     get.mockImplementation(async (url: string) => ({ data: servidor[url] }));
+}
+
+function letraDoChute(corpo: unknown): { token: string; letra: string } {
+    return corpo as { token: string; letra: string };
+}
+
+function chutesEnviados(): { token: string; letra: string }[] {
+    return post.mock.calls.filter(([url]) => url === "/palavra-do-dia/letras").map(([, corpo]) => letraDoChute(corpo));
 }
 
 function tecla(letra: string): HTMLElement {
@@ -39,11 +74,37 @@ async function abrirJogo() {
     await screen.findByText("Comida");
 }
 
+// Clica nas teclas sem esperar as respostas, e depois espera o back responder todas.
+async function clicar(letras: string) {
+    for (const letra of letras) {
+        fireEvent.click(tecla(letra));
+    }
+    await act(async () => {
+        await new Promise((resolver) => setTimeout(resolver, 0));
+    });
+}
+
 describe("palavra do dia", () => {
     beforeEach(() => {
         get.mockReset();
         post.mockReset();
-        post.mockResolvedValue({ status: 201, data: {} });
+        palavrasAntesDoFim = [];
+        aoSalvar = async () => ({ status: 201, data: {} });
+        post.mockImplementation(async (url: string, corpo?: unknown) => {
+            if (url !== "/palavra-do-dia/letras") {
+                return aoSalvar();
+            }
+            const { token, letra } = letraDoChute(corpo);
+            const antes: string[] = JSON.parse(token);
+            if (antes.includes(letra)) {
+                throw erroDaApi(409, { mensagem: `Você já chutou a letra ${letra}.` });
+            }
+            const jogo = jogoCom([...antes, letra]);
+            if (!jogo.terminou) {
+                palavrasAntesDoFim.push(jogo.palavra);
+            }
+            return { data: jogo };
+        });
         responderComo(SERVIDOR);
     });
 
@@ -63,7 +124,7 @@ describe("palavra do dia", () => {
         expect(screen.getByRole("button", { name: "Sair" })).toBeTruthy();
     });
 
-    it("busca a palavra no back e começa com a forca e as casas vazias", async () => {
+    it("começa pelo back, sem a palavra, com a forca e as casas vazias", async () => {
         await abrirJogo();
 
         expect(get).toHaveBeenCalledWith("/palavra-do-dia");
@@ -71,28 +132,55 @@ describe("palavra do dia", () => {
         expect(screen.getByRole("img", { name: "Palavra: vazio, vazio, vazio, vazio" })).toBeTruthy();
     });
 
+    it("cada letra vai para o back com o token da anterior, e a palavra só chega no fim", async () => {
+        await abrirJogo();
+
+        await clicar("ZMAC");
+
+        expect(chutesEnviados()).toEqual([
+            { token: "[]", letra: "Z" },
+            { token: '["Z"]', letra: "M" },
+            { token: '["Z","M"]', letra: "A" },
+            { token: '["Z","M","A"]', letra: "C" },
+        ]);
+        expect(palavrasAntesDoFim).toEqual([null, null, null]);
+        expect(screen.getByText(PALAVRA)).toBeTruthy();
+    });
+
     it("letra certa revela, errada desenha o boneco e repetida só avisa", async () => {
         const usuario = userEvent.setup();
         await abrirJogo();
 
         await usuario.click(tecla("M"));
-        expect(screen.getByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
+        expect(await screen.findByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
 
         await usuario.keyboard("z");
-        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+        expect(await screen.findByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
         expect(screen.getByText("1 de 6")).toBeTruthy();
 
         await usuario.keyboard("z");
         expect(screen.getByText("Você já tentou a letra Z. Letra repetida não conta como erro.")).toBeTruthy();
         expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+        expect(chutesEnviados()).toHaveLength(2);
+    });
+
+    it("as letras digitadas rápido vão todas, na ordem, sem esperar a resposta de cada uma", async () => {
+        await abrirJogo();
+
+        act(() => {
+            for (const letra of "zmzac") {
+                fireEvent.keyDown(window, { key: letra });
+            }
+        });
+        expect(await screen.findByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
+
+        expect(chutesEnviados().map(({ letra }) => letra)).toEqual(["Z", "M", "A", "C"]);
     });
 
     it("completar a palavra mostra o acerto e em quantas letras", async () => {
         await abrirJogo();
 
-        for (const letra of "ZMAC") {
-            fireEvent.click(tecla(letra));
-        }
+        await clicar("ZMAC");
 
         expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
         expect(valorDoResumo("Letras chutadas")).toBe("4");
@@ -103,35 +191,53 @@ describe("palavra do dia", () => {
     it("no sexto erro o boneco fica completo e a palavra aparece", async () => {
         await abrirJogo();
 
-        for (const letra of "ZWYKLB") {
-            fireEvent.click(tecla(letra));
-        }
+        await clicar("ZWYKLB");
 
         expect(screen.getByRole("heading", { name: "O boneco ficou completo." })).toBeTruthy();
         expect(screen.getByRole("img", { name: "Forca com o boneco completo" })).toBeTruthy();
-        expect(screen.getByText("MAÇÃ")).toBeTruthy();
+        expect(screen.getByText(PALAVRA)).toBeTruthy();
+    });
+
+    it("se o back não responder a letra, avisa e deixa digitar de novo", async () => {
+        await abrirJogo();
+        post.mockRejectedValueOnce(erroDeRede());
+
+        await clicar("M");
+        expect(screen.getByText(SEM_RESPOSTA)).toBeTruthy();
+        await clicar("M");
+
+        expect(screen.getByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
     });
 
     it("cada chute fica guardado no navegador", async () => {
         await abrirJogo();
 
-        fireEvent.click(tecla("Z"));
-        fireEvent.click(tecla("M"));
+        await clicar("ZM");
 
-        expect(JSON.parse(localStorage.getItem(CHAVE_CHUTES_DO_DIA) ?? "null")).toEqual({ dia: "2026-11-03", chutes: ["Z", "M"] });
+        expect(JSON.parse(localStorage.getItem(CHAVE_CHUTES_DO_DIA) ?? "null")).toEqual({ dia: DIA, chutes: ["Z", "M"] });
     });
 
-    it("recarregar no meio da partida continua de onde parou", async () => {
-        jaChutou("2026-11-03", ["Z", "M"]);
+    it("recarregar no meio da partida manda as letras de novo e continua de onde parou", async () => {
+        jaChutou(DIA, ["Z", "M"]);
 
         await abrirJogo();
 
         expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
         expect(screen.getByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
+        expect(chutesEnviados().map(({ letra }) => letra)).toEqual(["Z", "M"]);
+    });
+
+    it("se o back recusar uma letra guardada, a partida fica até a letra de antes", async () => {
+        jaChutou(DIA, ["Z", "Z", "M"]);
+
+        await abrirJogo();
+
+        expect(screen.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+        expect(screen.getByRole("img", { name: "Palavra: vazio, vazio, vazio, vazio" })).toBeTruthy();
     });
 
     it("quem já jogou hoje vê o resultado e quanto falta para a próxima palavra", async () => {
-        jaChutou("2026-11-03", ["M", "A", "C"]);
+        jaChutou(DIA, ["M", "A", "C"]);
 
         await abrirJogo();
 
@@ -146,14 +252,13 @@ describe("palavra do dia", () => {
         await abrirJogo();
 
         expect(screen.getByRole("img", { name: "Forca vazia" })).toBeTruthy();
+        expect(chutesEnviados()).toEqual([]);
     });
 
     it("no fim, mostra como todo mundo foi hoje com a sua coluna destacada", async () => {
         await abrirJogo();
 
-        for (const letra of "ZMAC") {
-            fireEvent.click(tecla(letra));
-        }
+        await clicar("ZMAC");
 
         const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
         const linhas = within(tabela)
@@ -164,27 +269,27 @@ describe("palavra do dia", () => {
             ["4 letras (você)", "3"],
             ["Não acertou", "1"],
         ]);
-        expect(get).toHaveBeenCalledWith("/palavra-do-dia/estatisticas", { params: { dia: "2026-11-03" } });
+        expect(get).toHaveBeenCalledWith("/palavra-do-dia/estatisticas", { params: { dia: DIA } });
     });
 
     it("quem está logado tem o resultado salvo na conta ao terminar", async () => {
         entrarComo("Larissa Souza");
         await abrirJogo();
 
-        for (const letra of "ZMAC") {
-            fireEvent.click(tecla(letra));
-        }
+        await clicar("ZMAC");
 
         expect(await screen.findByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
-        expect(post).toHaveBeenCalledWith("/resultados", { dia: "2026-11-03", letras: ["Z", "M", "A", "C"] });
+        expect(post).toHaveBeenCalledWith("/resultados", { dia: DIA, letras: ["Z", "M", "A", "C"] });
         const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
         expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("2");
     });
 
     it("resultado que já estava na conta conta como salvo", async () => {
-        post.mockRejectedValueOnce(erroDaApi(409, { mensagem: "Você já jogou a palavra deste dia." }));
+        aoSalvar = async () => {
+            throw erroDaApi(409, { mensagem: "Você já jogou a palavra deste dia." });
+        };
         entrarComo("Larissa Souza");
-        jaChutou("2026-11-03", ["M", "A", "C"]);
+        jaChutou(DIA, ["M", "A", "C"]);
 
         await abrirJogo();
 
@@ -192,9 +297,11 @@ describe("palavra do dia", () => {
     });
 
     it("se não der para salvar na conta, avisa e o seu resultado entra no gráfico", async () => {
-        post.mockRejectedValueOnce(erroDeRede());
+        aoSalvar = async () => {
+            throw erroDeRede();
+        };
         entrarComo("Larissa Souza");
-        jaChutou("2026-11-03", ["Z", "M", "A", "C"]);
+        jaChutou(DIA, ["Z", "M", "A", "C"]);
 
         await abrirJogo();
 
@@ -214,7 +321,7 @@ describe("palavra do dia", () => {
 
         expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
         expect(screen.getByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
-        expect(get).toHaveBeenCalledWith("/resultados", { params: { dia: "2026-11-03" } });
+        expect(get).toHaveBeenCalledWith("/resultados", { params: { dia: DIA } });
         expect(post).not.toHaveBeenCalled();
     });
 
@@ -226,7 +333,7 @@ describe("palavra do dia", () => {
             return { data: SERVIDOR[url as keyof typeof SERVIDOR] };
         });
         entrarComo("Larissa Souza");
-        jaChutou("2026-11-03", ["Z", "M"]);
+        jaChutou(DIA, ["Z", "M"]);
 
         await abrirJogo();
 
@@ -234,16 +341,16 @@ describe("palavra do dia", () => {
     });
 
     it("visitante não manda nada para a conta", async () => {
-        jaChutou("2026-11-03", ["M", "A", "C"]);
+        jaChutou(DIA, ["M", "A", "C"]);
 
         await abrirJogo();
         await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
 
-        expect(post).not.toHaveBeenCalled();
+        expect(post).not.toHaveBeenCalledWith("/resultados", expect.anything());
     });
 
     it("no fim, convida o visitante a criar conta", async () => {
-        jaChutou("2026-11-03", ["M", "A", "C"]);
+        jaChutou(DIA, ["M", "A", "C"]);
 
         await abrirJogo();
 
@@ -254,7 +361,7 @@ describe("palavra do dia", () => {
 
     it("quem já tem conta não vê o convite", async () => {
         entrarComo("Larissa Souza");
-        jaChutou("2026-11-03", ["M", "A", "C"]);
+        jaChutou(DIA, ["M", "A", "C"]);
 
         await abrirJogo();
 
@@ -264,11 +371,11 @@ describe("palavra do dia", () => {
     it("se as estatísticas falharem, o resultado continua na tela", async () => {
         get.mockImplementation(async (url: string) => {
             if (url === "/palavra-do-dia") {
-                return { data: MACA_DO_DIA };
+                return { data: SERVIDOR["/palavra-do-dia"] };
             }
             throw erroDeRede();
         });
-        jaChutou("2026-11-03", ["M", "A", "C"]);
+        jaChutou(DIA, ["M", "A", "C"]);
 
         await abrirJogo();
 

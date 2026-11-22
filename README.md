@@ -125,15 +125,22 @@ com login ficam juntas em `src/Rotas.tsx`, dentro de `RotaProtegida`.
 
 ## Como o jogo funciona
 
-- A palavra do dia vem do back (`GET /palavra-do-dia`) e é a mesma para todo
-  mundo. Ela troca à meia-noite de Brasília.
+- A palavra do dia é a mesma para todo mundo e troca à meia-noite de Brasília.
+  Ela fica no back até o fim da partida: o `GET /palavra-do-dia` manda só a
+  categoria e as casas fechadas, e cada letra vai para o `POST
+  /palavra-do-dia/letras`, que devolve as casas abertas e um token com as letras
+  de antes. A próxima letra vai com esse token. A palavra só chega quando a
+  partida acaba (`src/pages/JogoPage.tsx`).
 - Cada letra chutada revela todas as posições em que ela aparece. Acento e ç não
   importam: A revela Á, Ã e Â; C revela Ç.
 - Cada letra errada desenha uma parte do boneco (`src/componentes/Forca.tsx`). No
   sexto erro, o boneco fica completo e a partida acaba.
+- Quem digita rápido não perde letra: as letras esperam numa fila e vão para o
+  back uma por vez, na ordem (`src/hooks/useFilaDeLetras.ts`, o mesmo da sala).
 - Os chutes ficam guardados no `localStorage` a cada letra
-  (`src/jogo/chutesDoDia.ts`). Quem recarrega a página continua de onde parou, e
-  quem já jogou vê o resultado e quanto falta para a próxima palavra.
+  (`src/jogo/chutesDoDia.ts`). Quem recarrega a página manda as letras guardadas
+  de novo para o back e continua de onde parou, e quem já jogou vê o resultado e
+  quanto falta para a próxima palavra.
 - Quem está logado tem o resultado salvo na conta assim que a partida acaba
   (`POST /resultados`), e o "já jogou hoje" vem do back, valendo em qualquer
   aparelho. Quem jogou como visitante e depois entra leva a partida junto

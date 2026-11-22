@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { chutarLetra, comecarPartida, escolherPalavra } from "../api/partida";
@@ -13,6 +13,7 @@ import { Placar } from "../componentes/Placar";
 import { Teclado } from "../componentes/Teclado";
 import { TopoDaPagina } from "../componentes/TopoDaPagina";
 import { useCarregamento } from "../hooks/useCarregamento";
+import { useFilaDeLetras } from "../hooks/useFilaDeLetras";
 import { useFormulario } from "../hooks/useFormulario";
 import { usePartida } from "../hooks/usePartida";
 import { casasDaForca, casasDaPalavra, separarLetras, totalDeLetras } from "../jogo/forcaDaSala";
@@ -152,61 +153,22 @@ function recadoDaForca(forca: MinhaForca): string {
     return forca.terminou ? "O boneco ficou completo. Agora é esperar os outros." : "";
 }
 
-// A forca de quem adivinha. Quem digita rápido não perde letra: as letras esperam numa fila e vão para o back uma
-// por vez, na ordem em que foram digitadas. A tela é de uma vez só (key = número da vez), então a fila também.
+// A forca de quem adivinha. As letras vão para o back pela fila (useFilaDeLetras), uma por vez. A tela é de uma vez
+// só (key = número da vez), então a fila também.
 function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca: MinhaForca; aoChutar: AoChutar }) {
     const [aviso, setAviso] = useState("");
-    // A primeira da fila é a que está indo para o back; ela só sai da fila quando a resposta chega.
-    const fila = useRef<string[]>([]);
-    // Todas as letras desta vez que já entraram na fila, até as que já foram: a letra repetida não entra de novo.
-    const pedidas = useRef(new Set<string>());
-    const enviando = useRef(false);
-    const montada = useRef(true);
     const { certas, erradas } = separarLetras(forca.casas, forca.letras);
-
-    useEffect(() => {
-        montada.current = true;
-        return () => {
-            montada.current = false;
-        };
-    }, []);
-
-    async function enviarFila() {
-        enviando.current = true;
-        try {
-            for (let letra = fila.current[0]; letra !== undefined && montada.current; letra = fila.current[0]) {
-                const novo = await aoChutar(letra);
-                fila.current.shift();
-                // Com a forca completa ou a palavra descoberta, as letras que sobraram não têm mais onde entrar.
-                if (novo.vez?.minhaForca?.terminou) {
-                    fila.current = [];
-                }
-            }
-        } catch (falha) {
-            // A letra que falhou e as que esperavam podem ser digitadas de novo.
-            fila.current.forEach((letra) => pedidas.current.delete(letra));
-            fila.current = [];
-            setAviso(traduzirErro(falha).mensagem);
-        } finally {
-            enviando.current = false;
-        }
-    }
+    const pedir = useFilaDeLetras(
+        async (letra) => (await aoChutar(letra)).vez?.minhaForca?.terminou ?? false,
+        (falha) => setAviso(traduzirErro(falha).mensagem),
+    );
 
     function teclar(tecla: string) {
         const letra = letraBase(tecla);
         if (forca.terminou || !/^[A-Z]$/.test(letra)) {
             return;
         }
-        if (forca.letras.includes(letra) || pedidas.current.has(letra)) {
-            setAviso(`Você já tentou a letra ${letra}.`);
-            return;
-        }
-        pedidas.current.add(letra);
-        fila.current.push(letra);
-        setAviso("");
-        if (!enviando.current) {
-            void enviarFila();
-        }
+        setAviso(pedir(letra, forca.letras) ? "" : `Você já tentou a letra ${letra}.`);
     }
 
     const aoPressionarTecla = useEffectEvent((evento: KeyboardEvent) => {

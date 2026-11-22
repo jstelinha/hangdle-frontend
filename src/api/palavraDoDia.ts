@@ -1,8 +1,14 @@
-import type { EstatisticasDoDia, PalavraDoDia } from "../types/jogo";
+import type { EstatisticasDoDia, JogoDoDia } from "../types/jogo";
 import { api } from "./axios";
 
-export async function buscarPalavraDoDia(): Promise<PalavraDoDia> {
-    const resposta = await api.get<PalavraDoDia>("/palavra-do-dia");
+// A partida de hoje sem nenhuma letra: a palavra fica no back até o fim.
+export async function comecarJogoDoDia(): Promise<JogoDoDia> {
+    const resposta = await api.get<JogoDoDia>("/palavra-do-dia");
+    return resposta.data;
+}
+
+export async function chutarNoDia(token: string, letra: string): Promise<JogoDoDia> {
+    const resposta = await api.post<JogoDoDia>("/palavra-do-dia/letras", { token, letra });
     return resposta.data;
 }
 
