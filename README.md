@@ -88,7 +88,9 @@ npm run dev
 O front chama a API pelo caminho `/api` (`src/api/axios.ts`). No `npm run dev`,
 o proxy do `vite.config.ts` leva esse caminho para o back em
 `http://localhost:3000`, sem o `/api`: `/api/login` chega no back como `/login`.
-Para cadastrar e entrar, o back precisa estar no ar nessa porta.
+Para cadastrar e entrar, o back precisa estar no ar nessa porta. O compose
+normal não abre a porta 3000; suba o back junto com o `docker-compose.dev.yml`,
+como explica o README do `hangdle-backend`.
 
 ## Telas
 
