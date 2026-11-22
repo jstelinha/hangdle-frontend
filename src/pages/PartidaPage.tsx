@@ -25,7 +25,7 @@ import "./Jogo.css";
 import "./Partida.css";
 
 type AoEscolher = (escolha: EscolhaDaPalavra) => Promise<void>;
-type AoChutar = (letra: string) => Promise<void>;
+type AoChutar = (letra: string) => Promise<EstadoDaPartida>;
 
 function plural(quantidade: number, singular: string, varios: string): string {
     return `${quantidade} ${quantidade === 1 ? singular : varios}`;
@@ -152,28 +152,60 @@ function recadoDaForca(forca: MinhaForca): string {
     return forca.terminou ? "O boneco ficou completo. Agora é esperar os outros." : "";
 }
 
+// A forca de quem adivinha. Quem digita rápido não perde letra: as letras esperam numa fila e vão para o back uma
+// por vez, na ordem em que foram digitadas. A tela é de uma vez só (key = número da vez), então a fila também.
 function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca: MinhaForca; aoChutar: AoChutar }) {
     const [aviso, setAviso] = useState("");
+    // A primeira da fila é a que está indo para o back; ela só sai da fila quando a resposta chega.
+    const fila = useRef<string[]>([]);
+    // Todas as letras desta vez que já entraram na fila, até as que já foram: a letra repetida não entra de novo.
+    const pedidas = useRef(new Set<string>());
     const enviando = useRef(false);
+    const montada = useRef(true);
     const { certas, erradas } = separarLetras(forca.casas, forca.letras);
 
-    async function teclar(tecla: string) {
-        const letra = letraBase(tecla);
-        if (enviando.current || forca.terminou || !/^[A-Z]$/.test(letra)) {
-            return;
-        }
-        if (forca.letras.includes(letra)) {
-            setAviso(`Você já tentou a letra ${letra}.`);
-            return;
-        }
+    useEffect(() => {
+        montada.current = true;
+        return () => {
+            montada.current = false;
+        };
+    }, []);
+
+    async function enviarFila() {
         enviando.current = true;
-        setAviso("");
         try {
-            await aoChutar(letra);
+            for (let letra = fila.current[0]; letra !== undefined && montada.current; letra = fila.current[0]) {
+                const novo = await aoChutar(letra);
+                fila.current.shift();
+                // Com a forca completa ou a palavra descoberta, as letras que sobraram não têm mais onde entrar.
+                if (novo.vez?.minhaForca?.terminou) {
+                    fila.current = [];
+                }
+            }
         } catch (falha) {
+            // A letra que falhou e as que esperavam podem ser digitadas de novo.
+            fila.current.forEach((letra) => pedidas.current.delete(letra));
+            fila.current = [];
             setAviso(traduzirErro(falha).mensagem);
         } finally {
             enviando.current = false;
+        }
+    }
+
+    function teclar(tecla: string) {
+        const letra = letraBase(tecla);
+        if (forca.terminou || !/^[A-Z]$/.test(letra)) {
+            return;
+        }
+        if (forca.letras.includes(letra) || pedidas.current.has(letra)) {
+            setAviso(`Você já tentou a letra ${letra}.`);
+            return;
+        }
+        pedidas.current.add(letra);
+        fila.current.push(letra);
+        setAviso("");
+        if (!enviando.current) {
+            void enviarFila();
         }
     }
 
@@ -181,7 +213,7 @@ function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca:
         if (evento.ctrlKey || evento.metaKey || evento.altKey || evento.repeat || evento.key.length !== 1) {
             return;
         }
-        void teclar(evento.key);
+        teclar(evento.key);
     });
 
     useEffect(() => {
@@ -205,7 +237,7 @@ function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca:
             <p className="jogo__aviso" role="status">
                 {aviso || recadoDaForca(forca)}
             </p>
-            {!forca.terminou && <Teclado certas={certas} erradas={erradas} aoTeclar={(letra) => void teclar(letra)} />}
+            {!forca.terminou && <Teclado certas={certas} erradas={erradas} aoTeclar={teclar} />}
         </section>
     );
 }
@@ -328,7 +360,7 @@ function VezDaPartida({ estado, vez, aoEscolher, aoChutar }: PropsDaVez) {
         <>
             <Cronometro segundos={vez.segundosRestantes} rotulo="Tempo para adivinhar" />
             {vez.palavra && <PalavraDeQuemEscolheu palavra={vez.palavra} />}
-            {vez.minhaForca && <MinhaForcaNaVez vez={vez} forca={vez.minhaForca} aoChutar={aoChutar} />}
+            {vez.minhaForca && <MinhaForcaNaVez key={vez.numero} vez={vez} forca={vez.minhaForca} aoChutar={aoChutar} />}
             <ForcasDosJogadores forcas={vez.forcas} eu={estado.eu} letras={letras} />
         </>
     );
@@ -392,7 +424,9 @@ export function PartidaPage() {
         }
     }
 
-    const escolher: AoEscolher = (escolha) => agir(() => escolherPalavra(salaId, escolha));
+    const escolher: AoEscolher = async (escolha) => {
+        await agir(() => escolherPalavra(salaId, escolha));
+    };
     const chutar: AoChutar = (letra) => agir(() => chutarLetra(salaId, letra));
     const placar = (estado?.placar ?? []).map((jogador) => ({
         id: jogador.participanteId,

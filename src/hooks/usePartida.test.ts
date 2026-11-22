@@ -73,4 +73,26 @@ describe("acompanhar a partida", () => {
 
         expect(result.current.estado).toMatchObject({ situacao: "jogando", rodadas: 3 });
     });
+
+    it("ignora a consulta que começou durante o chute e chegou depois da resposta dele", async () => {
+        let responderConsulta: (valor: EstadoDaPartida) => void = () => undefined;
+        let responderChute: (valor: EstadoDaPartida) => void = () => undefined;
+        buscar.mockResolvedValueOnce(estado("jogando", 1)).mockReturnValueOnce(new Promise((resolver) => (responderConsulta = resolver)));
+        const { result } = renderHook(() => usePartida(5));
+        await esperar(0);
+
+        let chute: Promise<EstadoDaPartida> = Promise.resolve(estado("jogando"));
+        act(() => {
+            chute = result.current.agir(() => new Promise((resolver) => (responderChute = resolver)));
+        });
+        await esperar(INTERVALO_DA_CONSULTA);
+        expect(buscar).toHaveBeenCalledTimes(2);
+        await act(async () => {
+            responderChute(estado("jogando", 3));
+            await chute;
+        });
+        await act(async () => responderConsulta(estado("jogando", 1)));
+
+        expect(result.current.estado).toMatchObject({ rodadas: 3 });
+    });
 });

@@ -1,6 +1,6 @@
-import { screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { abrir, entrarComo, erroDaApi } from "../testes/ferramentas";
 import type { EstadoDaPartida, VezEmAndamento } from "../types/partida";
@@ -75,6 +75,69 @@ function depoisDeAgir(proxima: EstadoDaPartida) {
         partida = proxima;
         return Promise.resolve({ data: partida });
     });
+}
+
+// A mesma vez de ADIVINHANDO_BRU (a palavra é ARARA), mas antes de a Bru chutar qualquer letra.
+const BRU_SEM_LETRAS = estado({
+    ...ADIVINHANDO_BRU,
+    vez: vez({
+        ...ADIVINHANDO_BRU.vez,
+        minhaForca: { casas: [null, null, null, null, null], letras: [], erros: 0, acertou: false, terminou: false },
+    }),
+});
+
+// Um back lento, como numa rede ruim: a consulta devolve a partida de quando chegou ao back, 300 ms depois; o chute
+// leva 400 ms para ser conferido e devolve a partida já com a letra.
+const CONSULTA_LENTA = 300;
+const CHUTE_LENTO = 400;
+
+function comLetra(atual: EstadoDaPartida, letra: string): EstadoDaPartida {
+    const forca = atual.vez?.minhaForca;
+    if (!atual.vez || !forca) {
+        return atual;
+    }
+    const casas = [..."ARARA"].map((daPalavra, indice) => (daPalavra === letra ? letra : (forca.casas[indice] ?? null)));
+    const erros = forca.erros + ("ARARA".includes(letra) ? 0 : 1);
+    const acertou = casas.every((casa) => casa !== null);
+    const minhaForca = { casas, letras: [...forca.letras, letra], erros, acertou, terminou: acertou || erros >= 6 };
+    return { ...atual, vez: { ...atual.vez, minhaForca } };
+}
+
+function responderDevagar(inicial: EstadoDaPartida) {
+    partida = inicial;
+    get.mockImplementation((url: string) => {
+        if (url === "/salas/5") {
+            return Promise.resolve({ data: SALA });
+        }
+        const naHora = partida;
+        return new Promise((resolver) => setTimeout(() => resolver({ data: naHora }), CONSULTA_LENTA));
+    });
+    post.mockImplementation(
+        (_url: string, corpo?: unknown) =>
+            new Promise((resolver) =>
+                setTimeout(() => {
+                    partida = comLetra(partida, (corpo as { letra: string }).letra);
+                    resolver({ data: partida });
+                }, CHUTE_LENTO),
+            ),
+    );
+}
+
+async function esperar(milissegundos: number) {
+    await act(() => vi.advanceTimersByTimeAsync(milissegundos));
+}
+
+// Digita como quem é rápido no teclado do computador: uma tecla logo depois da outra, sem esperar a resposta.
+function digitarRapido(teclas: string) {
+    act(() => {
+        for (const tecla of teclas) {
+            fireEvent.keyDown(window, { key: tecla });
+        }
+    });
+}
+
+function letrasEnviadas(): string[] {
+    return post.mock.calls.map(([, corpo]) => (corpo as { letra: string }).letra);
 }
 
 function abrirPartida() {
@@ -179,6 +242,53 @@ describe("página da partida", () => {
 
         expect(screen.getByText("Você já tentou a letra A.")).toBeTruthy();
         expect(post).not.toHaveBeenCalled();
+    });
+
+    describe("com o back lento", () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it("não perde as letras digitadas rápido: vão uma por vez, na ordem, e todas aparecem na tela", async () => {
+            responderDevagar(BRU_SEM_LETRAS);
+            abrirPartida();
+            await esperar(CONSULTA_LENTA);
+            expect(screen.getByText("Ave")).toBeTruthy();
+
+            // A vai para o back; B e T esperam na fila. O segundo A é repetido e não entra.
+            digitarRapido("aba");
+            expect(screen.getByText("Você já tentou a letra A.")).toBeTruthy();
+            digitarRapido("t");
+            expect(letrasEnviadas()).toEqual(["A"]);
+
+            // Os três chutes levam 1,2 s. A consulta de 1 s depois da primeira começa durante o chute do T, antes de o
+            // back conferir o T, e chega depois da resposta dele: com a partida velha, ela não pode apagar o T da tela.
+            await esperar(3 * CHUTE_LENTO + CONSULTA_LENTA);
+
+            expect(letrasEnviadas()).toEqual(["A", "B", "T"]);
+            expect(get.mock.calls.filter(([url]) => url === "/salas/5/partida")).toHaveLength(2);
+            expect(screen.getByRole("img", { name: "Palavra: A, vazio, A, vazio, A" })).toBeTruthy();
+            expect(screen.getByRole("button", { name: "A, está na palavra" })).toBeTruthy();
+            expect(screen.getByRole("button", { name: "B, não está na palavra" })).toBeTruthy();
+            expect(screen.getByRole("button", { name: "T, não está na palavra" })).toBeTruthy();
+            expect(screen.getByText("2 de 6")).toBeTruthy();
+        });
+
+        it("quando a palavra é descoberta, as letras que esperavam na fila não vão para o back", async () => {
+            responderDevagar(ADIVINHANDO_BRU);
+            abrirPartida();
+            await esperar(CONSULTA_LENTA);
+
+            digitarRapido("rqw");
+            await esperar(3 * CHUTE_LENTO);
+
+            expect(letrasEnviadas()).toEqual(["R"]);
+            expect(screen.getByText("Você acertou! Agora é esperar os outros.")).toBeTruthy();
+        });
     });
 
     it("quem escolheu vê a palavra e o bonequinho de cada um", async () => {

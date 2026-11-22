@@ -17,17 +17,28 @@ export function usePartida(salaId: number) {
     const [estado, setEstado] = useState<EstadoDaPartida | null>(null);
     const [erro, setErro] = useState<string | null>(null);
     const [parou, setParou] = useState(false);
+    // Consultas e ações são numeradas na ordem em que começam.
     const pedidos = useRef(0);
-    const aplicado = useRef(0);
+    // A consulta só vale se começou depois deste número: depois da última consulta mostrada e do fim da última ação.
+    const consultaValeDepoisDe = useRef(0);
+    const ultimaAcao = useRef(0);
 
-    // As respostas podem chegar fora de ordem: vale só a do pedido mais novo.
-    const aplicar = useCallback((numero: number, novo: EstadoDaPartida) => {
-        if (numero > aplicado.current) {
-            aplicado.current = numero;
-            setEstado(novo);
-            setErro(null);
-        }
+    const mostrar = useCallback((novo: EstadoDaPartida) => {
+        setEstado(novo);
+        setErro(null);
     }, []);
+
+    // As respostas podem chegar fora de ordem. A consulta que começou antes de um chute terminar pode trazer a
+    // partida de antes dele e chegar depois da resposta do chute: essa é ignorada.
+    const aplicar = useCallback(
+        (numero: number, novo: EstadoDaPartida) => {
+            if (numero > consultaValeDepoisDe.current) {
+                consultaValeDepoisDe.current = numero;
+                mostrar(novo);
+            }
+        },
+        [mostrar],
+    );
 
     useEffect(() => {
         let ativo = true;
@@ -65,14 +76,23 @@ export function usePartida(salaId: number) {
         };
     }, [salaId, aplicar]);
 
-    // Começar, escolher e chutar devolvem a partida já atualizada; o erro volta para quem chamou.
+    // Começar, escolher e chutar devolvem a partida já atualizada, que também volta para quem chamou; o erro também.
     const agir = useCallback(
-        async (acao: () => Promise<EstadoDaPartida>) => {
+        async (acao: () => Promise<EstadoDaPartida>): Promise<EstadoDaPartida> => {
             pedidos.current += 1;
             const numero = pedidos.current;
-            aplicar(numero, await acao());
+            try {
+                const novo = await acao();
+                if (numero > ultimaAcao.current) {
+                    ultimaAcao.current = numero;
+                    mostrar(novo);
+                }
+                return novo;
+            } finally {
+                consultaValeDepoisDe.current = pedidos.current;
+            }
         },
-        [aplicar],
+        [mostrar],
     );
 
     return { estado, erro, parou, agir };
