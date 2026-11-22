@@ -98,7 +98,7 @@ describe("página da partida", () => {
         expect(post).toHaveBeenCalledWith("/salas/5/partida");
         expect(await screen.findByRole("heading", { name: "Sua vez de escolher a palavra" })).toBeTruthy();
         expect(screen.getByRole("timer", { name: "Tempo para escolher: 18 segundos" })).toBeTruthy();
-        expect(screen.getByText("Rodada 1 de 2 · vez de você")).toBeTruthy();
+        expect(screen.getByText("Rodada 1 de 2 · sua vez")).toBeTruthy();
     });
 
     it("quem não criou a sala espera, e com 1 jogador não dá para começar", async () => {
@@ -158,6 +158,7 @@ describe("página da partida", () => {
         abrirPartida();
 
         expect(await screen.findByText("Ave")).toBeTruthy();
+        expect(screen.getByText("Rodada 1 de 2 · vez de Larissa")).toBeTruthy();
         expect(screen.getByRole("img", { name: "Palavra: A, vazio, A, vazio, A" })).toBeTruthy();
         expect(screen.getByRole("button", { name: "Z, não está na palavra" }).hasAttribute("disabled")).toBe(true);
 

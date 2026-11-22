@@ -418,7 +418,7 @@ export function PartidaPage() {
                             <>
                                 {estado.vez && (
                                     <p className="partida__rodada">
-                                        {`Rodada ${estado.vez.rodada} de ${estado.rodadas} · vez de ${estado.vez.escolhedor.participanteId === estado.eu ? "você" : estado.vez.escolhedor.apelido}`}
+                                        {`Rodada ${estado.vez.rodada} de ${estado.rodadas} · ${estado.vez.escolhedor.participanteId === estado.eu ? "sua vez" : `vez de ${estado.vez.escolhedor.apelido}`}`}
                                     </p>
                                 )}
                                 {estado.vez ? (
