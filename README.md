@@ -61,15 +61,16 @@ proposta tem conexão com a persona/cliente?**.
 | `react-router-dom` | `src/Rotas.tsx` |
 | `axios` (no lugar do `fetch`) | `src/api/axios.ts` |
 | `zod` | `src/validacao/esquemas.ts` |
-| Docker | `Dockerfile` (o compose fica no `hangdle-backend`) |
+| Docker | `Dockerfile`, em duas etapas: o build com Node e o `dist/` servido pelo nginx de `nginx.conf` (o compose fica no `hangdle-backend`) |
 | Testes automáticos | arquivos `*.test.ts(x)` e `.github/workflows/testes.yml` |
 
 ## Onde o Node.js é usado
 
 O jogo roda no navegador, mas tudo em volta dele usa Node.js 24: o servidor do
-Vite (`npm run dev`, que é o que o container do front executa), o build
-(`npm run build`) e os testes (`npm test`). O `Dockerfile` parte da imagem
-`node:24-alpine`.
+Vite (`npm run dev`, para desenvolver), o build (`npm run build`) e os testes
+(`npm test`). A primeira etapa do `Dockerfile` parte da imagem `node:24-alpine` e
+roda o build; a segunda copia só o `dist/` para um `nginx:alpine`, então o
+container do front não roda Node.
 
 ## Rodar tudo com Docker
 
@@ -77,6 +78,12 @@ O `docker-compose.yml` fica no `hangdle-backend`, numa pasta ao lado desta, e
 sobe os quatro containers: banco, back, front e nginx. Siga o README de lá e abra
 `http://localhost`. O nginx entrega o front em `/` e leva tudo que começa com
 `/api/` para o back.
+
+O container do front serve o build de produção (o `dist/`) com o nginx de
+`nginx.conf`. Toda rota que não é arquivo, como `/salas`, volta para o
+`index.html`, e o React Router abre a tela certa mesmo ao recarregar a página.
+O container não acompanha as mudanças no código como o `npm run dev`: depois de
+mudar o front, rode o `docker compose up -d --build` de novo.
 
 ## Rodar só o front
 
