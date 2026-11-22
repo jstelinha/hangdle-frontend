@@ -101,14 +101,16 @@ type PropsDaLinha = {
     participante: Participante;
     souEu: boolean;
     souDonoDaSala: boolean;
+    encerrada: boolean;
     aoSair: (participante: Participante) => Promise<void>;
 };
 
 // Rubrica de Front-end - Componentização - Componentes exclusivos de uma página em funções separadas
-function LinhaDoParticipante({ participante, souEu, souDonoDaSala, aoSair }: PropsDaLinha) {
+// Na sala encerrada ninguém sai nem é tirado, como no back: o placar final fica com todos.
+function LinhaDoParticipante({ participante, souEu, souDonoDaSala, encerrada, aoSair }: PropsDaLinha) {
     const { id, salaId, apelido, pontos, dono } = participante;
-    const podeSair = souEu && !dono;
-    const podeTirar = !souEu && souDonoDaSala;
+    const podeSair = souEu && !dono && !encerrada;
+    const podeTirar = !souEu && souDonoDaSala && !encerrada;
 
     return (
         <tr>
@@ -191,6 +193,7 @@ export function SalaPage() {
                                     participante={participante}
                                     souEu={participante.usuarioId === usuarioId}
                                     souDonoDaSala={souDonoDaSala}
+                                    encerrada={sala?.situacao === "encerrada"}
                                     aoSair={sair}
                                 />
                             )}
@@ -203,7 +206,7 @@ export function SalaPage() {
                                 </Link>
                             </p>
                         )}
-                        {sala && dosParticipantes.situacao === "pronta" && <Convite sala={sala} />}
+                        {sala && sala.situacao !== "encerrada" && dosParticipantes.situacao === "pronta" && <Convite sala={sala} />}
                     </>
                 )}
             </main>

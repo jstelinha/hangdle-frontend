@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
@@ -120,6 +120,21 @@ describe("página da sala", () => {
 
         expect(await screen.findByText("Link copiado.")).toBeTruthy();
         expect(await navigator.clipboard.readText()).toBe(convite.value);
+    });
+
+    it("na sala encerrada, ninguém sai nem é tirado, e o convite some", async () => {
+        responder({ ...SALA, situacao: "encerrada" }, [LARISSA, CAIO]);
+        await abrirSala();
+
+        expect(screen.getByRole("link", { name: "Ver o placar final" })).toBeTruthy();
+        expect(screen.queryByRole("button", { name: "Tirar Caio" })).toBeNull();
+        expect(screen.queryByLabelText("Link do convite")).toBeNull();
+
+        cleanup();
+        responder({ ...SALA, donoId: 9, situacao: "encerrada" }, [{ ...LARISSA, dono: false }, { ...CAIO, dono: true }]);
+        await abrirSala();
+
+        expect(screen.queryByRole("button", { name: "Sair Larissa" })).toBeNull();
     });
 
     it("quem não está na sala vê o convite para entrar", async () => {
