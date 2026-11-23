@@ -141,6 +141,7 @@ ia (por exemplo, o convite de uma sala).
   sexto erro, o boneco fica completo e a partida acaba.
 - Quem digita rápido não perde letra: as letras esperam numa fila e vão para o
   back uma por vez, na ordem (`src/hooks/useFilaDeLetras.ts`, o mesmo da sala).
+  Enquanto a resposta não chega, a tecla aparece como "enviando" no teclado.
 - Os chutes ficam guardados no `localStorage` a cada letra
   (`src/jogo/chutesDoDia.ts`). Quem recarrega a página manda as letras guardadas
   de novo para o back e continua de onde parou, e quem já jogou vê o resultado e

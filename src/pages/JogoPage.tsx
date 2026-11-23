@@ -13,7 +13,7 @@ import { HistogramaDeLetras } from "../componentes/graficos/HistogramaDeLetras";
 import { Palavra } from "../componentes/Palavra";
 import { ProximaPalavra } from "../componentes/ProximaPalavra";
 import { Teclado } from "../componentes/Teclado";
-import { useFilaDeLetras } from "../hooks/useFilaDeLetras";
+import { recadoDasDevolvidas, recadoDoPedido, useFilaDeLetras } from "../hooks/useFilaDeLetras";
 import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { guardarChutesDoDia, lerChutesDoDia } from "../jogo/chutesDoDia";
 import { compartilharTexto, textoDoResultado } from "../jogo/compartilhar";
@@ -472,7 +472,7 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
     const [falha, setFalha] = useState<string | null>(null);
     // O token muda a cada resposta, e a próxima letra da fila precisa do mais novo: por isso fica num ref.
     const token = useRef(inicial.token);
-    const pedir = useFilaDeLetras(
+    const { pedir, pendentes, recadoDaFila } = useFilaDeLetras(
         async (letra) => {
             const novo = await chutarNoDia(token.current, letra);
             token.current = novo.token;
@@ -482,9 +482,9 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
             setAviso(recadoDaLetra(letra, novo));
             return novo.terminou;
         },
-        (erro) => {
+        (erro, devolvidas) => {
             setAviso("");
-            setFalha(traduzirErro(erro).mensagem);
+            setFalha(recadoDasDevolvidas(traduzirErro(erro).mensagem, devolvidas));
         },
     );
     // No fim, com a palavra, a Rodada desenha as casas que faltaram e faz o resumo.
@@ -496,7 +496,7 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
         if (jogo.terminou || !/^[A-Z]$/.test(letra)) {
             return;
         }
-        setAviso(pedir(letra, jogo.letras) ? "" : `Você já tentou a letra ${letra}. Letra repetida não conta como erro.`);
+        setAviso(recadoDoPedido(pedir(letra, jogo.letras), `Você já tentou a letra ${letra}. Letra repetida não conta como erro.`));
     }
 
     const aoPressionarTecla = useEffectEvent((evento: KeyboardEvent) => {
@@ -519,12 +519,12 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
             <Palavra casas={fim ? fim.casas : casasDaForca(jogo.casas)} mostrarResposta={fim !== null} />
             <Aviso mensagem={falha} />
             <p className="jogo__aviso" role="status">
-                {aviso}
+                {recadoDaFila || aviso}
             </p>
             {fim ? (
                 <FimDoDia rodada={fim} dia={jogo.dia} categoria={jogo.categoria} salvoNaConta={salvoNaConta} aoVirarODia={aoVirarODia} />
             ) : (
-                <Teclado certas={certas} erradas={erradas} aoTeclar={teclar} />
+                <Teclado certas={certas} erradas={erradas} pendentes={pendentes} aoTeclar={teclar} />
             )}
         </>
     );

@@ -32,6 +32,24 @@
     background: var(--regua-forte);
 }
 
+/* Digitada e esperando a resposta do back: a mesma cor, mais apagada, até a resposta dizer se está na palavra. */
+.tecla--enviando {
+    opacity: 0.45;
+    cursor: progress;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .tecla--enviando {
+        animation: tecla-enviando 0.9s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes tecla-enviando {
+    to {
+        opacity: 0.25;
+    }
+}
+
 .tecla--certa {
     background: var(--marca);
     color: var(--marca-tinta);
