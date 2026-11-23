@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useEffectEvent, useId, useRef, useState, type CSSProperties } from "react";
+import { lazy, Suspense, useEffect, useEffectEvent, useId, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { buscarEstatisticasDoDia, chutarNoDia, comecarJogoDoDia } from "../api/palavraDoDia";
@@ -9,7 +9,6 @@ import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Dialogo } from "../componentes/Dialogo";
 import { Forca } from "../componentes/Forca";
-import { HistogramaDeLetras } from "../componentes/graficos/HistogramaDeLetras";
 import { Palavra } from "../componentes/Palavra";
 import { ProximaPalavra } from "../componentes/ProximaPalavra";
 import { Teclado } from "../componentes/Teclado";
@@ -25,6 +24,11 @@ import { ERROS_PARA_PERDER, Rodada } from "../jogo/Rodada";
 import { lerSessao } from "../sessao/sessao";
 import type { EstatisticasDoDia, JogoDoDia, ResultadoDiario } from "../types/jogo";
 import "./Jogo.css";
+
+// O gráfico (recharts) só aparece no fim da partida: o código dele vem só nessa hora.
+const HistogramaDeLetras = lazy(() =>
+    import("../componentes/graficos/HistogramaDeLetras").then((modulo) => ({ default: modulo.HistogramaDeLetras })),
+);
 
 type Carregamento =
     | { situacao: "carregando" }
@@ -205,13 +209,15 @@ function ComoTodoMundoFoi({ estatisticas, rodada, jaContado }: PropsComoTodoMund
     }
     const seu = { acertou: rodada.estado === "acertou", chutes: rodada.chutes.length };
     return (
-        <HistogramaDeLetras
-            titulo="Como todo mundo foi hoje"
-            subtitulo="Quantas pessoas acertaram com cada número de letras chutadas."
-            unidade="jogadores"
-            colunas={colunasPorLetras(jaContado ? estatisticas.dados : somarResultado(estatisticas.dados, seu), seu)}
-            tabelaSoParaLeitor
-        />
+        <Suspense fallback={<p className="resultado__recado">Carregando como todo mundo foi hoje...</p>}>
+            <HistogramaDeLetras
+                titulo="Como todo mundo foi hoje"
+                subtitulo="Quantas pessoas acertaram com cada número de letras chutadas."
+                unidade="jogadores"
+                colunas={colunasPorLetras(jaContado ? estatisticas.dados : somarResultado(estatisticas.dados, seu), seu)}
+                tabelaSoParaLeitor
+            />
+        </Suspense>
     );
 }
 

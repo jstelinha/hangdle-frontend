@@ -1,8 +1,9 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { CarregandoPagina } from "./componentes/CarregandoPagina";
 import { RotaProtegida } from "./componentes/RotaProtegida";
 import { CadastroPage } from "./pages/CadastroPage";
 import { EntrarNaSalaPage } from "./pages/EntrarNaSalaPage";
-import { EstatisticasPage } from "./pages/EstatisticasPage";
 import { FormularioApelidoPage } from "./pages/FormularioApelidoPage";
 import { FormularioListaPage } from "./pages/FormularioListaPage";
 import { FormularioPalavraPage } from "./pages/FormularioPalavraPage";
@@ -17,6 +18,9 @@ import { PerfilPage } from "./pages/PerfilPage";
 import { SalaPage } from "./pages/SalaPage";
 import { SalasPage } from "./pages/SalasPage";
 
+// Os gráficos (recharts, cerca de 360 kB) só vêm quando alguém abre as estatísticas.
+const EstatisticasPage = lazy(() => import("./pages/EstatisticasPage").then((modulo) => ({ default: modulo.EstatisticasPage })));
+
 // Rubrica de Exigência - react-router-dom
 export function Rotas() {
     return (
@@ -27,7 +31,14 @@ export function Rotas() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/jogo" element={<JogoPage />} />
             <Route element={<RotaProtegida />}>
-                <Route path="/estatisticas" element={<EstatisticasPage />} />
+                <Route
+                    path="/estatisticas"
+                    element={
+                        <Suspense fallback={<CarregandoPagina recado="Carregando as suas estatísticas..." />}>
+                            <EstatisticasPage />
+                        </Suspense>
+                    }
+                />
                 <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/listas" element={<ListasPage />} />
                 <Route path="/listas/nova" element={<FormularioListaPage />} />
