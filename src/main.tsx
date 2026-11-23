@@ -1,3 +1,5 @@
+// Primeiro de tudo: a configuração do zod vale antes de qualquer esquema ser usado.
+import "./configurarZod";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
