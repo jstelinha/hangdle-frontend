@@ -82,6 +82,9 @@ sobe os quatro containers: banco, back, front e nginx. Siga o README de lá e ab
 O container do front serve o build de produção (o `dist/`) com o nginx de
 `nginx.conf`. Toda rota que não é arquivo, como `/salas`, volta para o
 `index.html`, e o React Router abre a tela certa mesmo ao recarregar a página.
+O nginx comprime o JS e o CSS com gzip. Os arquivos de `/assets/` têm um hash no
+nome e ficam um ano no cache do navegador; o `index.html` é conferido a cada
+visita, e um arquivo de `/assets/` que não existe dá `404`.
 O container não acompanha as mudanças no código como o `npm run dev`: depois de
 mudar o front, rode o `docker compose up -d --build` de novo.
 
