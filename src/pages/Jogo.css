@@ -171,7 +171,25 @@
     }
 }
 
-.resultado__forca .forca {
-    width: 120px;
+.resultado__forca-titulo {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+/* O bonequinho à esquerda e as letras chutadas à direita, no meio da altura dele. */
+.resultado__forca-corpo {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 16px;
     margin-top: 12px;
+}
+
+.resultado__forca .forca {
+    width: min(160px, 40vw);
+    margin: 0;
+}
+
+.resultado__forca .resultado__numeros {
+    margin-top: 0;
 }

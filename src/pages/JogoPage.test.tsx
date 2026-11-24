@@ -70,7 +70,9 @@ function numeroDoProgresso(janela: ReturnType<typeof within>, rotulo: string): s
     return janela.getByText(rotulo, { selector: "dt" }).nextElementSibling?.textContent ?? "";
 }
 
+// O gráfico de todo mundo fica na segunda aba da janela; a primeira, "Você", abre escolhida.
 async function verComoTodoMundoFoi() {
+    fireEvent.click(await screen.findByRole("tab", { name: "Todo mundo hoje" }));
     return screen.findByRole("table", { name: "Como todo mundo foi hoje" });
 }
 
@@ -215,7 +217,7 @@ describe("palavra do dia", () => {
         expect(screen.queryByRole("group", { name: "Teclado" })).toBeNull();
         const janela = await janelaDoResultado();
         expect(numeroDoProgresso(janela, "letras chutadas")).toBe("4");
-        expect(numeroDoProgresso(janela, "erro")).toBe("1");
+        expect(janela.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
     });
 
     it("a janela do resultado abre sozinha no fim, fecha e abre de novo pelo botão", async () => {
@@ -320,7 +322,7 @@ describe("palavra do dia", () => {
 
         await clicar("ZMAC");
 
-        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        const tabela = await verComoTodoMundoFoi();
         const linhas = within(tabela)
             .getAllByRole("row")
             .slice(1)
@@ -369,12 +371,11 @@ describe("palavra do dia", () => {
         expect(numeroDoProgresso(janela, "de acertos")).toMatch(/^67\s?%$/);
         expect(numeroDoProgresso(janela, "sequência atual")).toBe("2");
         expect(numeroDoProgresso(janela, "melhor sequência")).toBe("2");
-        expect(numeroDoProgresso(janela, "letras chutadas")).toBe("4");
-        expect(numeroDoProgresso(janela, "erro")).toBe("1");
+        expect(janela.getByRole("tab", { name: "Você" }).getAttribute("aria-selected")).toBe("true");
         const forca = within(janela.getByRole("region", { name: "Como ficou a sua forca" }));
         expect(forca.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
-        expect(janela.queryByRole("tab")).toBeNull();
-        expect(await janela.findByRole("table", { name: "Como todo mundo foi hoje" })).toBeTruthy();
+        expect(numeroDoProgresso(forca as ReturnType<typeof within>, "letras chutadas")).toBe("4");
+        expect(await verComoTodoMundoFoi()).toBeTruthy();
     });
 
     it("quem não tem conta também vê como ficou a forca", async () => {
@@ -446,7 +447,7 @@ describe("palavra do dia", () => {
         jaChutou(DIA, ["M", "A", "C"]);
 
         await abrirJogo();
-        await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        await verComoTodoMundoFoi();
 
         expect(post).not.toHaveBeenCalledWith("/resultados", expect.anything());
     });
@@ -482,6 +483,7 @@ describe("palavra do dia", () => {
 
         await abrirJogo();
 
+        fireEvent.click(await screen.findByRole("tab", { name: "Todo mundo hoje" }));
         expect(await screen.findByText("Não deu para carregar como todo mundo foi hoje.")).toBeTruthy();
         expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
     });

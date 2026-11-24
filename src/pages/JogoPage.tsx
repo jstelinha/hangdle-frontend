@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { buscarEstatisticasDoDia, chutarNoDia, comecarJogoDoDia } from "../api/palavraDoDia";
 import { buscarHistorico, jaEstavaSalvo, salvarResultado } from "../api/resultados";
+import { Abas } from "../componentes/Abas";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Dialogo } from "../componentes/Dialogo";
@@ -263,18 +264,6 @@ function Numeros({ titulo, numeros }: { titulo: string; numeros: Numero[] }) {
     );
 }
 
-function NumerosDeHoje({ rodada }: { rodada: Rodada }) {
-    return (
-        <Numeros
-            titulo="Hoje"
-            numeros={[
-                { rotulo: "letras chutadas", valor: String(rodada.chutes.length) },
-                { rotulo: rodada.erros === 1 ? "erro" : "erros", valor: String(rodada.erros) },
-            ]}
-        />
-    );
-}
-
 function NumerosDoProgresso({ resumo }: { resumo: ResumoDoHistorico }) {
     return (
         <Numeros
@@ -316,15 +305,24 @@ function SeuProgresso({ historico, hoje }: { historico: Busca<ResultadoDiario[]>
     return <NumerosDoProgresso resumo={resumirHistorico(comOResultadoDeHoje(historico.dados, hoje), hoje.dia)} />;
 }
 
-// O bonequinho da partida de hoje, do jeito que ficou: o mesmo desenho do jogo, menor, com a descrição em texto.
-function ComoFicouASuaForca({ erros }: { erros: number }) {
+// A partida de hoje: o bonequinho do jeito que ficou (o mesmo desenho do jogo, com a descrição em texto) e, ao lado,
+// quantas letras a pessoa chutou.
+function ComoFicouASuaForca({ rodada }: { rodada: Rodada }) {
     const idDoTitulo = useId();
     return (
-        <section className="resultado__bloco resultado__forca" aria-labelledby={idDoTitulo}>
-            <h3 id={idDoTitulo} className="resultado__bloco-titulo">
+        <section className="resultado__forca" aria-labelledby={idDoTitulo}>
+            <h3 id={idDoTitulo} className="resultado__forca-titulo">
                 Como ficou a sua forca
             </h3>
-            <Forca erros={erros} />
+            <div className="resultado__forca-corpo">
+                <Forca erros={rodada.erros} />
+                <dl className="resultado__numeros" style={{ "--colunas": 1 } as CSSProperties}>
+                    <div>
+                        <dt>letras chutadas</dt>
+                        <dd>{rodada.chutes.length}</dd>
+                    </div>
+                </dl>
+            </div>
         </section>
     );
 }
@@ -384,11 +382,18 @@ function ResultadoDoDia({ rodada, dia, categoria, naConta, aoVirarODia }: PropsD
                 A palavra era <strong>{rodada.palavra}</strong>.
             </p>
             <AvisoDaConta situacao={naConta} />
-            {visitante && <ConviteParaCriarConta />}
-            <NumerosDeHoje rodada={rodada} />
-            {!visitante && <SeuProgresso historico={historico} hoje={hoje} />}
-            <ComoFicouASuaForca erros={rodada.erros} />
-            <ComoTodoMundoFoi estatisticas={estatisticas} rodada={rodada} jaContado={naConta === "salvo"} />
+            {visitante ? <ConviteParaCriarConta /> : <SeuProgresso historico={historico} hoje={hoje} />}
+            <Abas
+                rotulo="Seu resultado e o de todo mundo"
+                abas={[
+                    { id: "voce", rotulo: "Você", conteudo: <ComoFicouASuaForca rodada={rodada} /> },
+                    {
+                        id: "todo-mundo",
+                        rotulo: "Todo mundo hoje",
+                        conteudo: <ComoTodoMundoFoi estatisticas={estatisticas} rodada={rodada} jaContado={naConta === "salvo"} />,
+                    },
+                ]}
+            />
             <div className="resultado__rodape">
                 <ProximaPalavra dia={dia} aoVirarODia={aoVirarODia} />
                 <BotaoCompartilhar texto={textoDoResultado(rodada, dia, categoria, `${window.location.origin}/jogo`)} />
