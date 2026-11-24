@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
-import { abrir, erroDaApi, erroDeRede } from "../testes/ferramentas";
+import { abrir, erroDaApi, erroDeRede, statusComTexto } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { post: vi.fn() } }));
 const post = vi.mocked(api.post);
@@ -114,7 +114,7 @@ describe("tela de cadastro", () => {
             senha: "Hangdle#2026",
         });
         expect(await screen.findByRole("heading", { name: "Entrar" })).toBeTruthy();
-        expect(screen.getByRole("status").textContent).toBe("Conta criada. Agora entre com seu e-mail e senha.");
+        expect(statusComTexto().textContent).toBe("Conta criada. Agora entre com seu e-mail e senha.");
         expect(valorDo("E-mail")).toBe("larissa@exemplo.com");
     });
 

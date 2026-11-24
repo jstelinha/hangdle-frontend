@@ -1,0 +1,8 @@
+.palavras__palavra {
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.palavras__sem-dica {
+    color: var(--tinta-3);
+}

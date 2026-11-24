@@ -1,5 +1,6 @@
 # Rubrica de Devops - Configuração docker
-FROM node:24-alpine
+# Etapa 1: compila o front (tsc -b && vite build) e gera o dist/.
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
@@ -7,7 +8,12 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+# Etapa 2: só o dist/, servido pelo nginx. O Node e o node_modules ficam na etapa 1.
+FROM nginx:alpine
 
-CMD ["npm", "run", "dev", "--", "--host"]
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80

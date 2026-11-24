@@ -5,7 +5,8 @@ type Props = {
     id: string;
     rotulo: string;
     valor: string;
-    aoMudar: (valor: string) => void;
+    aoMudar?: (valor: string) => void;
+    somenteLeitura?: boolean;
     erro?: string;
     tipo?: HTMLInputTypeAttribute;
     autoComplete?: string;
@@ -15,7 +16,7 @@ type Props = {
     children?: ReactNode;
 };
 
-export function CampoTexto({ id, rotulo, valor, aoMudar, erro, tipo = "text", autoComplete, inputMode, placeholder, maxLength, children }: Props) {
+export function CampoTexto({ id, rotulo, valor, aoMudar, somenteLeitura, erro, tipo = "text", autoComplete, inputMode, placeholder, maxLength, children }: Props) {
     const idErro = `${id}-erro`;
     const idAjuda = `${id}-ajuda`;
     const descritoPor = [erro ? idErro : null, children ? idAjuda : null].filter((parte) => parte !== null).join(" ");
@@ -31,7 +32,8 @@ export function CampoTexto({ id, rotulo, valor, aoMudar, erro, tipo = "text", au
                 className="campo__entrada"
                 type={tipo}
                 value={valor}
-                onChange={(evento) => aoMudar(evento.target.value)}
+                onChange={aoMudar && ((evento) => aoMudar(evento.target.value))}
+                readOnly={somenteLeitura}
                 autoComplete={autoComplete}
                 inputMode={inputMode}
                 placeholder={placeholder}

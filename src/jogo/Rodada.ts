@@ -1,8 +1,8 @@
 import { ehLetra, letraBase } from "./letras";
-import { NIVEIS, type Nivel } from "./niveis";
-import type { PalavraDaRodada } from "./palavras";
 
-export type EstadoRodada = "jogando" | "acertou" | "sem_vidas" | "tempo_esgotado";
+export const ERROS_PARA_PERDER = 6;
+
+export type EstadoRodada = "jogando" | "acertou" | "perdeu";
 
 export type ResultadoChute = "acerto" | "erro" | "repetida" | "invalida" | "encerrada";
 
@@ -14,25 +14,25 @@ export type Casa = {
 
 // Rubrica de Tech Forge - Encapsulamento e Proteção do Estado - Modificadores de acesso (private, protected, public) ou campos privados nativos (#field)
 export class Rodada {
-    readonly #palavra: PalavraDaRodada;
-    readonly #nivel: Nivel;
-    readonly #agora: () => number;
-    readonly #inicio: number;
+    readonly #palavra: string;
     readonly #chutes = new Set<string>();
     #erros = 0;
     #estado: EstadoRodada = "jogando";
-    #segundosRestantesNoFim: number | null = null;
 
     // Rubrica de Tech Forge - Encapsulamento e Proteção do Estado - Construtores limpos com a devida inicialização das propriedades
-    constructor(palavra: PalavraDaRodada, agora: () => number = Date.now) {
+    constructor(palavra: string) {
         this.#palavra = palavra;
-        this.#nivel = NIVEIS[palavra.nivel];
-        this.#agora = agora;
-        this.#inicio = agora();
+    }
+
+    static aPartirDosChutes(palavra: string, chutes: readonly string[]): Rodada {
+        const rodada = new Rodada(palavra);
+        for (const letra of chutes) {
+            rodada.chutar(letra);
+        }
+        return rodada;
     }
 
     chutar(tecla: string): ResultadoChute {
-        this.atualizarTempo();
         if (this.#estado !== "jogando") {
             return "encerrada";
         }
@@ -48,57 +48,39 @@ export class Rodada {
         this.#chutes.add(letra);
         if (this.#letrasDaPalavra().has(letra)) {
             if (this.casas.every((casa) => casa.revelada)) {
-                this.#encerrar("acertou");
+                this.#estado = "acertou";
             }
             return "acerto";
         }
 
         this.#erros += 1;
-        if (this.#erros >= this.#nivel.vidas) {
-            this.#encerrar("sem_vidas");
+        if (this.#erros >= ERROS_PARA_PERDER) {
+            this.#estado = "perdeu";
         }
         return "erro";
     }
 
-    atualizarTempo(): void {
-        if (this.#estado === "jogando" && this.#milissegundosCorridos() >= this.#nivel.segundos * 1000) {
-            this.#encerrar("tempo_esgotado");
-        }
-    }
-
     // Rubrica de Tech Forge - Acesso Controlado e Propriedades - get / set apenas onde existe validação, transformação ou regra de negócio
     get casas(): Casa[] {
-        return [...this.#palavra.texto].map((caractere) =>
+        return [...this.#palavra].map((caractere) =>
             ehLetra(caractere)
                 ? { caractere, tipo: "letra", revelada: this.#chutes.has(letraBase(caractere)) }
                 : { caractere, tipo: "separador", revelada: true },
         );
     }
 
-    get vidasRestantes(): number {
-        return this.#nivel.vidas - this.#erros;
-    }
-
-    get segundosRestantes(): number {
-        if (this.#segundosRestantesNoFim !== null) {
-            return this.#segundosRestantesNoFim;
-        }
-        const restante = this.#nivel.segundos * 1000 - this.#milissegundosCorridos();
-        return Math.max(0, Math.floor(restante / 1000));
-    }
-
-    get segundosGastos(): number {
-        return this.#nivel.segundos - this.segundosRestantes;
+    get chutes(): string[] {
+        return [...this.#chutes];
     }
 
     get letrasCertas(): string[] {
         const daPalavra = this.#letrasDaPalavra();
-        return [...this.#chutes].filter((letra) => daPalavra.has(letra));
+        return this.chutes.filter((letra) => daPalavra.has(letra));
     }
 
     get letrasErradas(): string[] {
         const daPalavra = this.#letrasDaPalavra();
-        return [...this.#chutes].filter((letra) => !daPalavra.has(letra));
+        return this.chutes.filter((letra) => !daPalavra.has(letra));
     }
 
     get erros(): number {
@@ -109,24 +91,11 @@ export class Rodada {
         return this.#estado;
     }
 
-    get nivel(): Nivel {
-        return this.#nivel;
-    }
-
-    get palavra(): PalavraDaRodada {
+    get palavra(): string {
         return this.#palavra;
     }
 
     #letrasDaPalavra(): Set<string> {
-        return new Set([...this.#palavra.texto].filter(ehLetra).map(letraBase));
-    }
-
-    #milissegundosCorridos(): number {
-        return this.#agora() - this.#inicio;
-    }
-
-    #encerrar(estado: EstadoRodada): void {
-        this.#segundosRestantesNoFim = estado === "tempo_esgotado" ? 0 : this.segundosRestantes;
-        this.#estado = estado;
+        return new Set([...this.#palavra].filter(ehLetra).map(letraBase));
     }
 }

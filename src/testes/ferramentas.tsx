@@ -1,14 +1,17 @@
-import { render } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { AxiosError, AxiosHeaders, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 import { MemoryRouter } from "react-router-dom";
 import { Rotas } from "../Rotas";
+import { ProvedorDeSessao } from "../sessao/ProvedorDeSessao";
 import { salvarSessao } from "../sessao/sessao";
 
 export function abrir(caminho: string) {
     return render(
-        <MemoryRouter initialEntries={[caminho]}>
-            <Rotas />
-        </MemoryRouter>,
+        <ProvedorDeSessao>
+            <MemoryRouter initialEntries={[caminho]}>
+                <Rotas />
+            </MemoryRouter>
+        </ProvedorDeSessao>,
     );
 }
 
@@ -37,4 +40,25 @@ export function erroDaApi(status: number, data: unknown): AxiosError {
 
 export function erroDeRede(): AxiosError {
     return new AxiosError("Network Error", AxiosError.ERR_NETWORK, configuracao());
+}
+
+// Os avisos ficam sempre na tela, vazios, como região viva (role="status"): o recado que importa é o status com texto.
+export function statusComTexto(): HTMLElement {
+    const comTexto = screen.queryAllByRole("status").filter((elemento) => elemento.textContent !== "");
+    const [primeiro] = comTexto;
+    if (comTexto.length !== 1 || !primeiro) {
+        throw new Error(`Esperava um status com texto e achei ${comTexto.length}: ${comTexto.map((elemento) => elemento.textContent).join(" | ")}`);
+    }
+    return primeiro;
+}
+
+export function recadosDeStatus(): string[] {
+    return screen
+        .queryAllByRole("status")
+        .map((elemento) => elemento.textContent ?? "")
+        .filter((texto) => texto !== "");
+}
+
+export function esperarStatusComTexto(): Promise<HTMLElement> {
+    return waitFor(statusComTexto);
 }

@@ -1,0 +1,18 @@
+.paginacao {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.paginacao__atual {
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.paginacao__desligado {
+    opacity: 0.45;
+    cursor: default;
+}

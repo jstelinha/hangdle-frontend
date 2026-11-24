@@ -1,0 +1,16 @@
+.formulario {
+    max-width: 440px;
+    margin-top: 28px;
+}
+
+.formulario__botoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.formulario__botoes .botao--discreto {
+    min-height: 44px;
+    padding: 10px 20px;
+}

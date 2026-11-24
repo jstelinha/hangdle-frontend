@@ -5,29 +5,52 @@ import { traduzirErro } from "../api/erros";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { CampoTexto } from "../componentes/CampoTexto";
-import { salvarSessao } from "../sessao/sessao";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
+import { levarPartidaParaConta } from "../sessao/levarPartidaParaConta";
+import { salvarSessao, sessaoVenceu } from "../sessao/sessao";
+import { lerPedeConta, lerVoltarPara, recadoDoLogin } from "../sessao/voltarPara";
 import type { Sessao } from "../types/usuario";
 import { errosDoFormulario, esquemaLogin, type ErrosDoFormulario, type FormularioLogin } from "../validacao/esquemas";
 import "./Autenticacao.css";
 
-type VindoDoCadastro = {
+const SESSAO_VENCIDA = "Sua sessão expirou. Entre de novo para continuar.";
+
+type EstadoDoLogin = {
     cadastroFeito: boolean;
     email: string;
+    voltarPara: string | null;
+    pedeConta: boolean;
 };
 
-function lerEstado(estado: unknown): VindoDoCadastro {
+function lerEstado(estado: unknown): EstadoDoLogin {
+    const voltarPara = lerVoltarPara(estado);
+    const pedeConta = lerPedeConta(estado);
     if (typeof estado === "object" && estado !== null && "cadastroFeito" in estado && estado.cadastroFeito === true) {
         const email = "email" in estado && typeof estado.email === "string" ? estado.email : "";
-        return { cadastroFeito: true, email };
+        return { cadastroFeito: true, email, voltarPara, pedeConta };
     }
-    return { cadastroFeito: false, email: "" };
+    return { cadastroFeito: false, email: "", voltarPara, pedeConta };
+}
+
+// O recado do topo, quando não há erro nem a conta acabou de ser criada: a sessão que venceu vem antes do motivo de
+// quem chegou de uma tela que pede conta.
+function motivoDoLogin(chegada: EstadoDoLogin, vencida: boolean, erroDaApi: string | null): string | null {
+    if (erroDaApi !== null || chegada.cadastroFeito) {
+        return null;
+    }
+    if (vencida) {
+        return SESSAO_VENCIDA;
+    }
+    return chegada.pedeConta && chegada.voltarPara ? recadoDoLogin(chegada.voltarPara) : null;
 }
 
 export function LoginPage() {
+    useTituloDaPagina("Entrar");
     const navegar = useNavigate();
     const local = useLocation();
-    const [vindoDoCadastro] = useState(() => lerEstado(local.state));
-    const [form, setForm] = useState<FormularioLogin>({ email: vindoDoCadastro.email, senha: "" });
+    const [chegada] = useState(() => lerEstado(local.state));
+    const [vencida] = useState(sessaoVenceu);
+    const [form, setForm] = useState<FormularioLogin>({ email: chegada.email, senha: "" });
     const [erros, setErros] = useState<ErrosDoFormulario<FormularioLogin>>({});
     const [tentouEnviar, setTentouEnviar] = useState(false);
     const [erroDaApi, setErroDaApi] = useState<string | null>(null);
@@ -57,8 +80,9 @@ export function LoginPage() {
         try {
             const resposta = await api.post<Sessao>("/login", { email: form.email.trim(), senha: form.senha });
             salvarSessao(resposta.data);
+            await levarPartidaParaConta();
             // Rubrica de Front-end - Autenticação - Redirecionar para a área logada
-            navegar("/jogo", { replace: true });
+            navegar(chegada.voltarPara ?? "/estatisticas", { replace: true });
         } catch (erro) {
             // Rubrica de Front-end - Autenticação - Lidar com os erros da API de forma amigável para o usuário
             const traduzido = traduzirErro(erro);
@@ -69,7 +93,8 @@ export function LoginPage() {
         }
     }
 
-    const mostrarSucesso = vindoDoCadastro.cadastroFeito && erroDaApi === null;
+    const mostrarSucesso = chegada.cadastroFeito && erroDaApi === null;
+    const motivo = motivoDoLogin(chegada, vencida, erroDaApi);
 
     return (
         <div className="pagina">
@@ -79,6 +104,7 @@ export function LoginPage() {
                 <p className="subtitulo">Use o e-mail e a senha do seu cadastro.</p>
 
                 <Aviso mensagem={mostrarSucesso ? "Conta criada. Agora entre com seu e-mail e senha." : null} tipo="sucesso" />
+                <Aviso mensagem={motivo} tipo="informacao" />
                 <Aviso mensagem={erroDaApi} />
 
                 {/* Rubrica de Front-end - Autenticação - Campos para email e senha */}
@@ -104,13 +130,16 @@ export function LoginPage() {
                         autoComplete="current-password"
                     />
 
-                    <button type="submit" className="botao botao--largo autenticacao__enviar" disabled={enviando}>
+                    <button type="submit" className="botao botao--largo autenticacao__enviar" disabled={enviando} aria-busy={enviando}>
                         {enviando ? "Entrando..." : "Entrar"}
                     </button>
                 </form>
 
                 <p className="autenticacao__troca">
-                    Ainda não tem conta? <Link to="/cadastro">Criar conta</Link>
+                    Ainda não tem conta?{" "}
+                    <Link to="/cadastro" state={chegada.voltarPara ? { voltarPara: chegada.voltarPara } : undefined}>
+                        Criar conta
+                    </Link>
                 </p>
             </main>
         </div>

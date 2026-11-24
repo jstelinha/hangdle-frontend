@@ -1,10 +1,15 @@
 .cabecalho {
+    border-bottom: 1px solid var(--regua);
+}
+
+.cabecalho__linha {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px 16px;
     min-height: 64px;
-    border-bottom: 1px solid var(--regua);
+    padding: 10px 0;
 }
 
 .cabecalho__marca {
@@ -12,17 +17,71 @@
     text-decoration: none;
 }
 
-.cabecalho__usuario {
+.cabecalho__menu {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px 20px;
+    min-width: 0;
+    margin-left: auto;
+}
+
+.cabecalho__item {
+    padding: 4px 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--tinta-2);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cabecalho__item:hover {
+    color: var(--tinta);
+}
+
+.cabecalho__item[aria-current="page"] {
+    border-bottom-color: var(--marca);
+    color: var(--marca);
+}
+
+.cabecalho__conta {
     display: flex;
     align-items: center;
     gap: 12px;
     min-width: 0;
 }
 
-.cabecalho__nome {
-    overflow: hidden;
+
+.cabecalho__recado {
+    margin-top: 8px;
     color: var(--tinta-2);
-    font-size: 0.9375rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+}
+
+.cabecalho__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+    /* O nome e o Sair dividem a primeira linha com o logotipo: o bloco ocupa o que sobra, e o nome encolhe com
+       reticências. Os links descem para a segunda linha. */
+    .cabecalho__linha--conta .cabecalho__conta {
+        order: 1;
+        flex: 1 1 0;
+        justify-content: flex-end;
+    }
+
+    .cabecalho__linha--conta .cabecalho__menu {
+        order: 2;
+        flex-basis: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+    }
 }

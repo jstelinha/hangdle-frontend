@@ -2,10 +2,13 @@ import { screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
-import { abrir, erroDaApi, erroDeRede, tokenQueExpiraEm } from "../testes/ferramentas";
+import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
+import { encerrarSessao, salvarSessao } from "../sessao/sessao";
+import { abrir, erroDaApi, erroDeRede, statusComTexto, tokenQueExpiraEm } from "../testes/ferramentas";
 
-vi.mock("../api/axios", () => ({ api: { post: vi.fn() } }));
+vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 const post = vi.mocked(api.post);
+const get = vi.mocked(api.get);
 
 async function entrar(usuario: UserEvent, email: string, senha: string) {
     await usuario.type(screen.getByLabelText("E-mail"), email);
@@ -16,6 +19,7 @@ async function entrar(usuario: UserEvent, email: string, senha: string) {
 describe("tela de login", () => {
     beforeEach(() => {
         post.mockReset();
+        get.mockResolvedValue({ data: { resultados: [] } });
     });
 
     it("guarda o token no localStorage e leva para a área logada", async () => {
@@ -27,9 +31,9 @@ describe("tela de login", () => {
         await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
 
         expect(post).toHaveBeenCalledWith("/login", { email: "larissa@exemplo.com", senha: "Hangdle#2026" });
-        expect(await screen.findByRole("heading", { name: "Como jogar" })).toBeTruthy();
+        expect(await screen.findByRole("heading", { name: "Suas estatísticas" })).toBeTruthy();
         expect(localStorage.getItem("hangdle.token")).toBe(token);
-        expect(screen.getByText("Larissa Souza")).toBeTruthy();
+        expect(screen.getByRole("link", { name: "Perfil" })).toBeTruthy();
     });
 
     it("e-mail ou senha errados: mostra a mensagem, não guarda nada e fica no login", async () => {
@@ -74,17 +78,67 @@ describe("tela de login", () => {
         expect((await screen.findByRole("alert")).textContent).toBe("Não foi possível falar com o servidor. Confira sua conexão e tente de novo.");
     });
 
+    it("a partida jogada antes de entrar vai para a conta", async () => {
+        localStorage.setItem(CHAVE_CHUTES_DO_DIA, JSON.stringify({ dia: "2026-11-03", chutes: ["M", "A", "C"] }));
+        post.mockResolvedValueOnce({ status: 200, data: { token: tokenQueExpiraEm(3600), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } } });
+        const usuario = userEvent.setup();
+        abrir("/login");
+
+        await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
+
+        expect(await screen.findByRole("heading", { name: "Suas estatísticas" })).toBeTruthy();
+        expect(post).toHaveBeenNthCalledWith(2, "/resultados", { dia: "2026-11-03", letras: ["M", "A", "C"] });
+    });
+
+    it("se a partida guardada for recusada, entra do mesmo jeito", async () => {
+        localStorage.setItem(CHAVE_CHUTES_DO_DIA, JSON.stringify({ dia: "2026-11-03", chutes: ["M"] }));
+        post
+            .mockResolvedValueOnce({ status: 200, data: { token: tokenQueExpiraEm(3600), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } } })
+            .mockRejectedValueOnce(erroDaApi(400, { mensagem: "A partida ainda não terminou." }));
+        const usuario = userEvent.setup();
+        abrir("/login");
+
+        await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
+
+        expect(await screen.findByRole("heading", { name: "Suas estatísticas" })).toBeTruthy();
+    });
+
     it("sair apaga a sessão e volta para o login", async () => {
         post.mockResolvedValueOnce({ status: 200, data: { token: tokenQueExpiraEm(3600), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } } });
         const usuario = userEvent.setup();
         abrir("/login");
         await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
-        await screen.findByRole("heading", { name: "Como jogar" });
+        await screen.findByRole("heading", { name: "Suas estatísticas" });
 
         await usuario.click(screen.getByRole("button", { name: "Sair" }));
 
         expect(await screen.findByRole("heading", { name: "Entrar" })).toBeTruthy();
         expect(localStorage.getItem("hangdle.token")).toBeNull();
         expect(localStorage.getItem("hangdle.usuario")).toBeNull();
+    });
+
+    it("sessão vencida: o login diz por que a pessoa caiu ali e, depois de entrar, volta para onde ela estava", async () => {
+        salvarSessao({ token: tokenQueExpiraEm(-10), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } });
+        post.mockResolvedValueOnce({ status: 200, data: { token: tokenQueExpiraEm(3600), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } } });
+        get.mockImplementation(async (url: string) => ({
+            data: url === "/listas-prontas" ? { listas: [] } : { itens: [], pagina: 1, porPagina: 10, total: 0, totalDePaginas: 0 },
+        }));
+        const usuario = userEvent.setup();
+        abrir("/listas");
+
+        expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
+        expect(statusComTexto().textContent).toBe("Sua sessão expirou. Entre de novo para continuar.");
+
+        await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
+
+        expect(await screen.findByRole("heading", { name: "Suas listas" })).toBeTruthy();
+    });
+
+    it("quem saiu não vê o recado de sessão vencida", async () => {
+        encerrarSessao();
+        abrir("/listas");
+
+        expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
+        expect(statusComTexto().textContent).toBe("Entre na sua conta para continuar.");
     });
 });

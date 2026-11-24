@@ -1,0 +1,23 @@
+.topo__voltar {
+    display: inline-block;
+    margin-bottom: 12px;
+    font-size: 0.9375rem;
+}
+
+.topo__linha {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.topo__linha .titulo {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.topo__acoes {
+    display: flex;
+    gap: 8px;
+}

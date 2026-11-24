@@ -1,14 +1,13 @@
-import type { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
-import { lerSessao } from "../sessao/sessao";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useSessao } from "../sessao/contexto";
 
-type Props = {
-    children: ReactNode;
-};
-
-export function RotaProtegida({ children }: Props) {
-    if (!lerSessao()) {
-        return <Navigate to="/login" replace />;
+// As rotas dentro desta só abrem com login. Sem login, vão para a tela de entrar levando o endereço, e o login volta
+// para ele (por exemplo, o link de convite de uma sala).
+export function RotaProtegida() {
+    const sessao = useSessao();
+    const local = useLocation();
+    if (!sessao) {
+        return <Navigate to="/login" replace state={{ voltarPara: `${local.pathname}${local.search}`, pedeConta: true }} />;
     }
-    return children;
+    return <Outlet />;
 }

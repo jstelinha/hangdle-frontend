@@ -1,0 +1,31 @@
+.acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.acoes__pergunta {
+    color: var(--tinta-2);
+    font-size: 0.875rem;
+}
+
+/* A pergunta fica numa linha só dela, acima dos botões, e pode quebrar: a célula das ações é estreita (width: 1%). */
+.acoes--confirmando .acoes__pergunta {
+    flex-basis: 100%;
+    white-space: normal;
+    text-align: right;
+}
+
+.acoes .acoes__apagar {
+    border-color: var(--perigo);
+    background: var(--perigo-fundo);
+    color: var(--perigo);
+}
+
+/* O botão de confirmar continua vermelho com o mouse em cima (o :hover do .botao--discreto mudaria o fundo). */
+.acoes .acoes__apagar:hover:not(:disabled) {
+    border-color: var(--perigo);
+    background: var(--perigo-fundo);
+}

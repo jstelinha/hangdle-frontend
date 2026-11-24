@@ -7,8 +7,12 @@
     --tinta-3: #6f6d67;
     --regua: #dddcd5;
     --regua-forte: #b9b7ad;
+    /* Borda de campo e de casa vazia: precisa de 3:1 contra o fundo (WCAG 1.4.11). 3,46:1 na superfície, 3,26:1 no fundo. */
+    --borda-campo: #8a887f;
     --marca: #0f7f58;
     --marca-tinta: #ffffff;
+    /* O fundo do botão principal com o mouse em cima (6,53:1 com o texto). */
+    --marca-realce: #0c6b4a;
     --letra-errada: #6f6d67;
     --letra-errada-tinta: #ffffff;
     --tecla: #e6e5df;
@@ -34,8 +38,10 @@
         --tinta-3: #a3a198;
         --regua: #2c2c2a;
         --regua-forte: #4d4c48;
+        --borda-campo: #6f6d67;
         --marca: #2fa37c;
         --marca-tinta: #0d0d0d;
+        --marca-realce: #3bb88d;
         --letra-errada: #3a3936;
         --letra-errada-tinta: #c3c2b7;
         --tecla: #2c2c2a;
@@ -59,8 +65,10 @@
     --tinta-3: #a3a198;
     --regua: #2c2c2a;
     --regua-forte: #4d4c48;
+    --borda-campo: #6f6d67;
     --marca: #2fa37c;
     --marca-tinta: #0d0d0d;
+    --marca-realce: #3bb88d;
     --letra-errada: #3a3936;
     --letra-errada-tinta: #c3c2b7;
     --tecla: #2c2c2a;
@@ -91,12 +99,15 @@ body {
     background: var(--fundo);
     color: var(--tinta);
     font-family: var(--fonte);
-    font-size: 16px;
+    /* Em rem, para acompanhar o tamanho de fonte escolhido no navegador. */
+    font-size: 1rem;
     line-height: 1.5;
 }
 
 button,
-input {
+input,
+select,
+textarea {
     font: inherit;
     color: inherit;
 }
@@ -155,11 +166,22 @@ a {
     background: var(--marca);
     color: var(--marca-tinta);
     font-weight: 600;
+    text-decoration: none;
     cursor: pointer;
 }
 
+.botao:hover:not(:disabled) {
+    border-color: var(--marca-realce);
+    background: var(--marca-realce);
+}
+
+/* Desligado por regra (como "Começar a partida" com 1 jogador): não dá. Enviando (aria-busy): espere. */
 .botao:disabled {
     opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.botao[aria-busy="true"] {
     cursor: progress;
 }
 
@@ -169,6 +191,11 @@ a {
     border-color: var(--regua-forte);
     background: transparent;
     color: var(--tinta);
+}
+
+.botao--discreto:hover:not(:disabled) {
+    border-color: var(--tinta-3);
+    background: var(--tecla);
 }
 
 .botao--largo {

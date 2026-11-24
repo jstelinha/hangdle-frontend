@@ -1,33 +1,14 @@
-.jogo__regras {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 20px;
-    padding-left: 20px;
-}
-
-.jogo__niveis {
-    margin-top: 24px;
-}
-
-.jogo__resumo {
+.jogo__painel {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px 40px;
-    margin-top: 16px;
-}
-
-.jogo__resumo dt {
+    justify-content: space-between;
+    gap: 8px 24px;
+    margin-top: 20px;
     color: var(--tinta-2);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
 }
 
-.jogo__resumo dd {
-    font-size: 1.5rem;
-    font-weight: 700;
+.jogo__painel strong {
+    color: var(--tinta);
 }
 
 .jogo__acao {
@@ -41,11 +22,174 @@
     text-align: center;
 }
 
-.jogo__tabela {
-    margin-top: 16px;
-}
-
 .jogo .secao__titulo:focus,
 .jogo .titulo:focus {
     outline: none;
+}
+
+/* A janela do resultado, no fim do jogo */
+
+.resultado__palavra {
+    margin-top: 6px;
+    color: var(--tinta-2);
+}
+
+.resultado__palavra strong {
+    color: var(--tinta);
+}
+
+.resultado__salvo {
+    margin-top: 12px;
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+}
+
+.resultado__recado {
+    margin-top: 20px;
+    color: var(--tinta-2);
+}
+
+.resultado__bloco {
+    margin: 24px 0;
+}
+
+.resultado__bloco-titulo {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.resultado__numeros {
+    display: grid;
+    grid-template-columns: repeat(var(--colunas), 1fr);
+    gap: 8px;
+    margin-top: 12px;
+    text-align: center;
+}
+
+.resultado__numeros div {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+}
+
+.resultado__numeros dd {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.resultado__numeros dt {
+    margin-top: 6px;
+    color: var(--tinta-2);
+    font-size: 0.9375rem;
+    line-height: 1.25;
+}
+
+.resultado__convite {
+    margin: 20px 0;
+    padding: 16px;
+    border: 1px solid var(--regua);
+    background: var(--sucesso-fundo);
+}
+
+.resultado__convite-titulo {
+    font-size: 1rem;
+}
+
+.resultado__convite p {
+    margin-top: 4px;
+    color: var(--tinta-2);
+}
+
+.resultado__convite-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.resultado__rodape {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 24px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--regua);
+}
+
+.resultado__rodape .proxima-palavra {
+    margin-top: 0;
+}
+
+.resultado__rodape .proxima-palavra strong {
+    display: block;
+    font-size: 2rem;
+    line-height: 1.1;
+}
+
+.resultado__compartilhar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.resultado__compartilhar .botao {
+    gap: 10px;
+}
+
+.resultado__icone {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+.resultado__copiado {
+    min-height: 1.25em;
+    margin-top: 6px;
+    color: var(--tinta-2);
+    font-size: 0.8125rem;
+}
+
+@media (max-width: 480px) {
+    .resultado__numeros dd {
+        font-size: 1.875rem;
+    }
+
+    .resultado__numeros dt {
+        font-size: 0.8125rem;
+    }
+
+    .resultado__compartilhar {
+        align-items: stretch;
+        width: 100%;
+    }
+}
+
+.resultado__forca-titulo {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+/* O bonequinho à esquerda e as letras chutadas à direita, no meio da altura dele. */
+.resultado__forca-corpo {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.resultado__forca .forca {
+    width: min(160px, 40vw);
+    margin: 0;
+}
+
+.resultado__forca .resultado__numeros {
+    margin-top: 0;
 }

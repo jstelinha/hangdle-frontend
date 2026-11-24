@@ -2,6 +2,9 @@ import type { Sessao, Usuario } from "../types/usuario";
 
 export const CHAVE_TOKEN = "hangdle.token";
 export const CHAVE_USUARIO = "hangdle.usuario";
+// Fica nesta aba (sessionStorage) quando a sessão acabou por ter vencido, e não porque a pessoa saiu: o login usa
+// para dizer "Sua sessão expirou". Sai quando a pessoa entra de novo ou clica em Sair.
+export const CHAVE_SESSAO_VENCIDA = "hangdle.sessaoVencida";
 
 function expiracaoDoToken(token: string): number | null {
     const partes = token.split(".");
@@ -32,19 +35,63 @@ function ehUsuario(valor: unknown): valor is Usuario {
     );
 }
 
-// Rubrica de Front-end - Autenticação - Armazenar o token no localStorage
-export function salvarSessao(sessao: Sessao): void {
-    localStorage.setItem(CHAVE_TOKEN, sessao.token);
-    localStorage.setItem(CHAVE_USUARIO, JSON.stringify({ id: sessao.usuario.id, nome: sessao.usuario.nome, email: sessao.usuario.email }));
+function marcarSessaoVencida(vencida: boolean): void {
+    try {
+        if (vencida) {
+            sessionStorage.setItem(CHAVE_SESSAO_VENCIDA, "1");
+        } else {
+            sessionStorage.removeItem(CHAVE_SESSAO_VENCIDA);
+        }
+    } catch {
+        return;
+    }
 }
 
-export function encerrarSessao(): void {
+export function sessaoVenceu(): boolean {
+    try {
+        return sessionStorage.getItem(CHAVE_SESSAO_VENCIDA) === "1";
+    } catch {
+        return false;
+    }
+}
+
+export const EVENTO_SESSAO = "hangdle:sessao";
+
+function avisarQueMudou(): void {
+    window.dispatchEvent(new Event(EVENTO_SESSAO));
+}
+
+function guardarUsuario(usuario: Usuario): void {
+    localStorage.setItem(CHAVE_USUARIO, JSON.stringify({ id: usuario.id, nome: usuario.nome, email: usuario.email }));
+}
+
+function apagarSessao(): void {
     try {
         localStorage.removeItem(CHAVE_TOKEN);
         localStorage.removeItem(CHAVE_USUARIO);
     } catch {
         return;
     }
+}
+
+// Rubrica de Front-end - Autenticação - Armazenar o token no localStorage
+export function salvarSessao(sessao: Sessao): void {
+    localStorage.setItem(CHAVE_TOKEN, sessao.token);
+    guardarUsuario(sessao.usuario);
+    marcarSessaoVencida(false);
+    avisarQueMudou();
+}
+
+export function atualizarUsuarioDaSessao(usuario: Usuario): void {
+    guardarUsuario(usuario);
+    avisarQueMudou();
+}
+
+// Sem motivo, é a pessoa que saiu. Com "vencida", foi o token que venceu (ou o back recusou).
+export function encerrarSessao(motivo?: "vencida"): void {
+    apagarSessao();
+    marcarSessaoVencida(motivo === "vencida");
+    avisarQueMudou();
 }
 
 export function lerSessao(agora: number = Date.now()): Sessao | null {
@@ -62,7 +109,10 @@ export function lerSessao(agora: number = Date.now()): Sessao | null {
 
     const expiracao = expiracaoDoToken(token);
     if (expiracao === null || expiracao <= agora) {
-        encerrarSessao();
+        if (expiracao !== null) {
+            marcarSessaoVencida(true);
+        }
+        apagarSessao();
         return null;
     }
 
@@ -73,7 +123,7 @@ export function lerSessao(agora: number = Date.now()): Sessao | null {
         usuario = null;
     }
     if (!ehUsuario(usuario)) {
-        encerrarSessao();
+        apagarSessao();
         return null;
     }
     return { token, usuario };
