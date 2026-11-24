@@ -17,3 +17,11 @@
     margin-top: 24px;
     color: var(--tinta-2);
 }
+
+/* Com espaço, Editar e Apagar ficam lado a lado: a célula tem width: 1% (o mínimo possível), e sem isto o flex-wrap
+   do AcoesDaLinha empilhava os botões até em tela larga. */
+@media (min-width: 600px) {
+    .tabela-paginada .tabela__acoes .acoes {
+        flex-wrap: nowrap;
+    }
+}

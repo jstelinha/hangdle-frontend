@@ -34,6 +34,17 @@
 }
 
 @media (max-width: 400px) {
+    /* No cabeçalho do celular, o logotipo menor deixa o nome e o Sair caberem na mesma linha. */
+    .logotipo--pequeno {
+        gap: 2px;
+    }
+
+    .logotipo--pequeno .logotipo__casa {
+        width: 20px;
+        height: 20px;
+        font-size: 0.6875rem;
+    }
+
     .logotipo--grande .logotipo__casa {
         width: 34px;
         height: 34px;

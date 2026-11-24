@@ -95,12 +95,15 @@ body {
     background: var(--fundo);
     color: var(--tinta);
     font-family: var(--fonte);
-    font-size: 16px;
+    /* Em rem, para acompanhar o tamanho de fonte escolhido no navegador. */
+    font-size: 1rem;
     line-height: 1.5;
 }
 
 button,
-input {
+input,
+select,
+textarea {
     font: inherit;
     color: inherit;
 }
