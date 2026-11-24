@@ -1,0 +1,33 @@
+.listas-prontas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+    gap: 12px;
+    margin-top: 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.listas-prontas__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--regua);
+    background: var(--superficie);
+}
+
+.listas-prontas__dados {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.listas-prontas__nome {
+    font-weight: 700;
+}
+
+.listas-prontas__total {
+    color: var(--tinta-2);
+    font-size: 0.875rem;
+}

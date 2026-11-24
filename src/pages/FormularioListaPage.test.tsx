@@ -34,10 +34,18 @@ async function salvarCom(usuario: UserEvent, nome: string) {
     await usuario.click(screen.getByRole("button", { name: "Salvar" }));
 }
 
+// Depois de salvar ou cancelar, a tela volta para /listas, que também busca as listas prontas.
+function respostaDe(url: string): unknown {
+    if (url === "/listas-prontas") {
+        return { listas: [] };
+    }
+    return url === "/listas/3" ? ANIMAIS : PAGINA;
+}
+
 describe("cadastro de lista", () => {
     beforeEach(() => {
         vi.resetAllMocks();
-        get.mockImplementation((url: string) => Promise.resolve({ data: url === "/listas/3" ? ANIMAIS : PAGINA }));
+        get.mockImplementation((url: string) => Promise.resolve({ data: respostaDe(url) }));
     });
 
     it("é uma tela separada da listagem, só para quem entrou", async () => {
@@ -102,7 +110,7 @@ describe("cadastro de lista", () => {
 describe("edição de lista", () => {
     beforeEach(() => {
         vi.resetAllMocks();
-        get.mockImplementation((url: string) => Promise.resolve({ data: url === "/listas/3" ? ANIMAIS : PAGINA }));
+        get.mockImplementation((url: string) => Promise.resolve({ data: respostaDe(url) }));
     });
 
     it("chega com o nome atual e salva o novo", async () => {

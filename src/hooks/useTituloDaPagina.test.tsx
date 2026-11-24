@@ -10,7 +10,9 @@ const get = vi.mocked(api.get);
 describe("título da aba", () => {
     beforeEach(() => {
         vi.resetAllMocks();
-        get.mockResolvedValue({ data: { itens: [], pagina: 1, porPagina: 10, total: 0, totalDePaginas: 0 } });
+        get.mockImplementation(async (url: string) => ({
+            data: url === "/listas-prontas" ? { listas: [] } : { itens: [], pagina: 1, porPagina: 10, total: 0, totalDePaginas: 0 },
+        }));
     });
 
     it("junta o título da tela com o nome do site", () => {

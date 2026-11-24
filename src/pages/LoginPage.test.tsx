@@ -120,7 +120,9 @@ describe("tela de login", () => {
     it("sessão vencida: o login diz por que a pessoa caiu ali e, depois de entrar, volta para onde ela estava", async () => {
         salvarSessao({ token: tokenQueExpiraEm(-10), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } });
         post.mockResolvedValueOnce({ status: 200, data: { token: tokenQueExpiraEm(3600), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } } });
-        get.mockResolvedValue({ data: { itens: [], pagina: 1, porPagina: 10, total: 0, totalDePaginas: 0 } });
+        get.mockImplementation(async (url: string) => ({
+            data: url === "/listas-prontas" ? { listas: [] } : { itens: [], pagina: 1, porPagina: 10, total: 0, totalDePaginas: 0 },
+        }));
         const usuario = userEvent.setup();
         abrir("/listas");
 

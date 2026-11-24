@@ -8,12 +8,26 @@ import { abrir, entrarComo, erroDaApi, erroDeRede, esperarStatusComTexto } from 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 const get = vi.mocked(api.get);
 const apagar = vi.mocked(api.delete);
+const post = vi.mocked(api.post);
 
 const ANIMAIS = { id: 3, nome: "Animais", totalDePalavras: 12 };
 const FRUTAS = { id: 4, nome: "Frutas", totalDePalavras: 0 };
 
 function pagina<T>(itens: T[], numero = 1, totalDePaginas = 1) {
     return { data: { itens, pagina: numero, porPagina: 10, total: itens.length + (totalDePaginas - 1) * 10, totalDePaginas } };
+}
+
+const PRONTAS = [
+    { id: 1, nome: "Animais", totalDePalavras: 20 },
+    { id: 3, nome: "Cores", totalDePalavras: 20 },
+];
+
+// A página busca as listas da pessoa e as listas prontas ao mesmo tempo (as prontas saem primeiro: o efeito do
+// componente filho roda antes). Por isso a resposta depende do endereço, e as de /listas podem vir de uma fila.
+let filaDasListas: (() => Promise<unknown>)[] = [];
+
+function aoBuscarListas(...respostas: (() => Promise<unknown>)[]) {
+    filaDasListas.push(...respostas);
 }
 
 async function abrirListas(endereco = "/listas") {
@@ -25,7 +39,14 @@ async function abrirListas(endereco = "/listas") {
 describe("listagem das listas", () => {
     beforeEach(() => {
         vi.resetAllMocks();
-        get.mockResolvedValue(pagina([ANIMAIS, FRUTAS]));
+        filaDasListas = [];
+        get.mockImplementation(async (url: string) => {
+            if (url === "/listas-prontas") {
+                return { data: { listas: PRONTAS } };
+            }
+            const proxima = filaDasListas.shift();
+            return proxima ? proxima() : pagina([ANIMAIS, FRUTAS]);
+        });
     });
 
     it("é só para quem entrou", () => {
@@ -54,7 +75,10 @@ describe("listagem das listas", () => {
     });
 
     it("anda pelas páginas", async () => {
-        get.mockResolvedValueOnce(pagina([ANIMAIS], 2, 2)).mockResolvedValueOnce(pagina([FRUTAS], 1, 2));
+        aoBuscarListas(
+            async () => pagina([ANIMAIS], 2, 2),
+            async () => pagina([FRUTAS], 1, 2),
+        );
         const usuario = userEvent.setup();
         await abrirListas("/listas?pagina=2");
 
@@ -68,19 +92,19 @@ describe("listagem das listas", () => {
     });
 
     it("convida a criar a primeira lista", async () => {
-        get.mockResolvedValueOnce(pagina([]));
+        aoBuscarListas(async () => pagina([]));
         entrarComo("Larissa Souza");
         abrir("/listas");
 
         expect(await screen.findByText(/Você ainda não tem listas/)).toBeTruthy();
-        expect(screen.getByRole("link", { name: "Criar a primeira" }).getAttribute("href")).toBe("/listas/nova");
+        expect(screen.getByRole("link", { name: "Crie a primeira" }).getAttribute("href")).toBe("/listas/nova");
     });
 
     it("apaga depois de confirmar e busca a página de novo", async () => {
         apagar.mockResolvedValueOnce({ data: "" });
         const usuario = userEvent.setup();
         await abrirListas();
-        get.mockResolvedValueOnce(pagina([FRUTAS]));
+        aoBuscarListas(async () => pagina([FRUTAS]));
 
         await usuario.click(screen.getByRole("button", { name: "Apagar Animais" }));
         expect(apagar).not.toHaveBeenCalled();
@@ -120,10 +144,40 @@ describe("listagem das listas", () => {
     });
 
     it("avisa quando não conseguiu buscar as listas", async () => {
-        get.mockRejectedValueOnce(erroDeRede());
+        aoBuscarListas(async () => {
+            throw erroDeRede();
+        });
         entrarComo("Larissa Souza");
         abrir("/listas");
 
         expect((await screen.findByRole("alert")).textContent).toBe(SEM_RESPOSTA);
+    });
+
+    it("mostra as listas prontas e adiciona uma às listas da pessoa", async () => {
+        const CORES = { id: 9, nome: "Cores", totalDePalavras: 20 };
+        post.mockResolvedValueOnce({ data: { ...CORES, usuarioId: 7 } });
+        const usuario = userEvent.setup();
+        await abrirListas();
+        const prontas = within(await screen.findByRole("region", { name: "Listas prontas" }));
+        expect(prontas.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["Animais20 palavrasAdicionar", "Cores20 palavrasAdicionar"]);
+        aoBuscarListas(async () => pagina([ANIMAIS, CORES, FRUTAS]));
+
+        await usuario.click(prontas.getByRole("button", { name: "Adicionar Cores às suas listas" }));
+
+        expect(post).toHaveBeenCalledWith("/listas-prontas/3/copias");
+        const aviso = await esperarStatusComTexto();
+        expect(aviso.textContent).toBe("A lista Cores entrou nas suas listas, com 20 palavras.");
+        expect(document.activeElement).toBe(aviso);
+        expect(await screen.findByRole("link", { name: "Cores" })).toBeTruthy();
+    });
+
+    it("quem já tem uma lista com o mesmo nome recebe o recado de como adicionar de novo", async () => {
+        post.mockRejectedValueOnce(erroDaApi(409, { mensagem: "Você já tem uma lista com esse nome.", campos: { nome: "Você já tem uma lista com esse nome." } }));
+        const usuario = userEvent.setup();
+        await abrirListas();
+
+        await usuario.click(await screen.findByRole("button", { name: "Adicionar Animais às suas listas" }));
+
+        expect((await screen.findByRole("alert")).textContent).toBe("Você já tem uma lista chamada Animais. Para adicionar de novo, mude o nome dela.");
     });
 });
