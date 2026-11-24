@@ -42,10 +42,12 @@
     color: var(--marca-tinta);
 }
 
+/* As letras que faltaram, mostradas no fim: borda tracejada e sem fundo, diferente da certa (cheia) também sem cor. */
 .casa--faltou {
-    border-color: var(--letra-errada);
-    background: var(--letra-errada);
-    color: var(--letra-errada-tinta);
+    border-style: dashed;
+    border-color: var(--tinta-3);
+    background: transparent;
+    color: var(--tinta-2);
 }
 
 .casa--separador {
