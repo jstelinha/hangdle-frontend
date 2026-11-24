@@ -2,7 +2,7 @@ import "./Aviso.css";
 
 type Props = {
     mensagem: string | null;
-    tipo?: "erro" | "sucesso";
+    tipo?: "erro" | "sucesso" | "informacao";
 };
 
 export function Aviso({ mensagem, tipo = "erro" }: Props) {

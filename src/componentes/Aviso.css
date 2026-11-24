@@ -14,3 +14,9 @@
     background: var(--sucesso-fundo);
     color: var(--marca);
 }
+
+.aviso--informacao {
+    border-left-color: var(--marca);
+    background: var(--superficie);
+    color: var(--tinta);
+}

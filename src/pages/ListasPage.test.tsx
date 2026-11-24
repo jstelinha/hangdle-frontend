@@ -50,7 +50,7 @@ describe("listagem das listas", () => {
 
         const menu = screen.getByRole("navigation", { name: "Principal" });
         expect(within(menu).getByRole("link", { name: "Listas" }).getAttribute("aria-current")).toBe("page");
-        expect(within(menu).getByRole("link", { name: "Jogar" }).getAttribute("aria-current")).toBeNull();
+        expect(within(menu).getByRole("link", { name: "Salas" }).getAttribute("aria-current")).toBeNull();
     });
 
     it("anda pelas páginas", async () => {

@@ -122,7 +122,7 @@ describe("palavra do dia", () => {
         await abrirJogo();
 
         expect(screen.getByRole("heading", { name: "Palavra do dia" })).toBeTruthy();
-        expect(within(screen.getByRole("navigation", { name: "Conta" })).getByRole("link", { name: "Entrar" })).toBeTruthy();
+        expect(within(screen.getByRole("banner")).getByRole("link", { name: "Entrar" })).toBeTruthy();
     });
 
     it("quem entrou vê o próprio nome no cabeçalho", async () => {

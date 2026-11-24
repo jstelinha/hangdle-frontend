@@ -1,11 +1,12 @@
 import { useState, type SubmitEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/axios";
 import { traduzirErro } from "../api/erros";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { CampoTexto } from "../componentes/CampoTexto";
 import { RequisitosSenha } from "../componentes/RequisitosSenha";
+import { lerVoltarPara } from "../sessao/voltarPara";
 import { formatarCpf } from "../validacao/cpf";
 import { errosDoFormulario, esquemaCadastro, type ErrosDoFormulario, type FormularioCadastro } from "../validacao/esquemas";
 import "./Autenticacao.css";
@@ -31,6 +32,8 @@ function focarPrimeiroComErro(erros: ErrosDoFormulario<FormularioCadastro>) {
 
 export function CadastroPage() {
     const navegar = useNavigate();
+    // Quem veio de uma tela que pede conta (as salas) volta para ela depois do login.
+    const voltarPara = lerVoltarPara(useLocation().state);
     const [form, setForm] = useState<FormularioCadastro>(VAZIO);
     const [erros, setErros] = useState<ErrosDoFormulario<FormularioCadastro>>({});
     const [tentouEnviar, setTentouEnviar] = useState(false);
@@ -66,7 +69,7 @@ export function CadastroPage() {
                 senha: form.senha,
             });
             // Rubrica de Front-end - Cadastro de Usuário - Redirecionar para o login após o cadastro
-            navegar("/login", { replace: true, state: { cadastroFeito: true, email: form.email.trim() } });
+            navegar("/login", { replace: true, state: { cadastroFeito: true, email: form.email.trim(), voltarPara } });
         } catch (erro) {
             // Rubrica de Front-end - Cadastro de Usuário - Lidar com as mensagens de erro da API
             const traduzido = traduzirErro(erro);
@@ -139,7 +142,10 @@ export function CadastroPage() {
                 </form>
 
                 <p className="autenticacao__troca">
-                    Já tem conta? <Link to="/login">Entrar</Link>
+                    Já tem conta?{" "}
+                    <Link to="/login" state={voltarPara ? { voltarPara } : undefined}>
+                        Entrar
+                    </Link>
                 </p>
             </main>
         </div>

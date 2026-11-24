@@ -7,28 +7,31 @@ import { Cabecalho } from "../componentes/Cabecalho";
 import { CampoTexto } from "../componentes/CampoTexto";
 import { levarPartidaParaConta } from "../sessao/levarPartidaParaConta";
 import { salvarSessao } from "../sessao/sessao";
+import { lerVoltarPara, recadoDoLogin } from "../sessao/voltarPara";
 import type { Sessao } from "../types/usuario";
 import { errosDoFormulario, esquemaLogin, type ErrosDoFormulario, type FormularioLogin } from "../validacao/esquemas";
 import "./Autenticacao.css";
 
-type VindoDoCadastro = {
+type EstadoDoLogin = {
     cadastroFeito: boolean;
     email: string;
+    voltarPara: string | null;
 };
 
-function lerEstado(estado: unknown): VindoDoCadastro {
+function lerEstado(estado: unknown): EstadoDoLogin {
+    const voltarPara = lerVoltarPara(estado);
     if (typeof estado === "object" && estado !== null && "cadastroFeito" in estado && estado.cadastroFeito === true) {
         const email = "email" in estado && typeof estado.email === "string" ? estado.email : "";
-        return { cadastroFeito: true, email };
+        return { cadastroFeito: true, email, voltarPara };
     }
-    return { cadastroFeito: false, email: "" };
+    return { cadastroFeito: false, email: "", voltarPara };
 }
 
 export function LoginPage() {
     const navegar = useNavigate();
     const local = useLocation();
-    const [vindoDoCadastro] = useState(() => lerEstado(local.state));
-    const [form, setForm] = useState<FormularioLogin>({ email: vindoDoCadastro.email, senha: "" });
+    const [chegada] = useState(() => lerEstado(local.state));
+    const [form, setForm] = useState<FormularioLogin>({ email: chegada.email, senha: "" });
     const [erros, setErros] = useState<ErrosDoFormulario<FormularioLogin>>({});
     const [tentouEnviar, setTentouEnviar] = useState(false);
     const [erroDaApi, setErroDaApi] = useState<string | null>(null);
@@ -60,7 +63,7 @@ export function LoginPage() {
             salvarSessao(resposta.data);
             await levarPartidaParaConta();
             // Rubrica de Front-end - Autenticação - Redirecionar para a área logada
-            navegar("/estatisticas", { replace: true });
+            navegar(chegada.voltarPara ?? "/estatisticas", { replace: true });
         } catch (erro) {
             // Rubrica de Front-end - Autenticação - Lidar com os erros da API de forma amigável para o usuário
             const traduzido = traduzirErro(erro);
@@ -71,7 +74,8 @@ export function LoginPage() {
         }
     }
 
-    const mostrarSucesso = vindoDoCadastro.cadastroFeito && erroDaApi === null;
+    const mostrarSucesso = chegada.cadastroFeito && erroDaApi === null;
+    const motivo = chegada.voltarPara && !chegada.cadastroFeito && erroDaApi === null ? recadoDoLogin(chegada.voltarPara) : null;
 
     return (
         <div className="pagina">
@@ -81,6 +85,7 @@ export function LoginPage() {
                 <p className="subtitulo">Use o e-mail e a senha do seu cadastro.</p>
 
                 <Aviso mensagem={mostrarSucesso ? "Conta criada. Agora entre com seu e-mail e senha." : null} tipo="sucesso" />
+                <Aviso mensagem={motivo} tipo="informacao" />
                 <Aviso mensagem={erroDaApi} />
 
                 {/* Rubrica de Front-end - Autenticação - Campos para email e senha */}
@@ -112,7 +117,10 @@ export function LoginPage() {
                 </form>
 
                 <p className="autenticacao__troca">
-                    Ainda não tem conta? <Link to="/cadastro">Criar conta</Link>
+                    Ainda não tem conta?{" "}
+                    <Link to="/cadastro" state={chegada.voltarPara ? { voltarPara: chegada.voltarPara } : undefined}>
+                        Criar conta
+                    </Link>
                 </p>
             </main>
         </div>

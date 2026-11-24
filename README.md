@@ -46,7 +46,7 @@ proposta tem conexão com a persona/cliente?**.
 
 | Item da rubrica | Onde está | Teste que comprova |
 |---|---|---|
-| **Front-end · Autenticação** · campos, regex de e-mail, token no `localStorage`, erros amigáveis, ir para a área logada (`/estatisticas`) | `src/pages/LoginPage.tsx`, `src/sessao/sessao.ts`, `src/validacao/email.ts`, `src/api/axios.ts` (manda o token e encerra a sessão vencida) | `src/pages/LoginPage.test.tsx`, `src/sessao/sessao.test.ts`, `src/api/axios.test.ts` |
+| **Front-end · Autenticação** · campos, regex de e-mail, token no `localStorage`, erros amigáveis, ir para a área logada (`/estatisticas`, ou de volta para a tela que pediu o login) | `src/pages/LoginPage.tsx`, `src/sessao/sessao.ts`, `src/sessao/voltarPara.ts`, `src/validacao/email.ts`, `src/api/axios.ts` (manda o token e encerra a sessão vencida) | `src/pages/LoginPage.test.tsx`, `src/componentes/Cabecalho.test.tsx`, `src/sessao/sessao.test.ts`, `src/api/axios.test.ts` |
 | **Front-end · Edição de Usuário** · contexto com o usuário em toda a aplicação, validação de CPF e de nível de senha, confirmação da senha, e-mail sem alteração | `src/sessao/contexto.ts` e `src/sessao/ProvedorDeSessao.tsx` (o nome do cabeçalho muda na hora), `src/pages/PerfilPage.tsx`, `src/validacao/esquemas.ts` (`esquemaEdicao`) | `src/sessao/ProvedorDeSessao.test.tsx`, `src/pages/PerfilPage.test.tsx` |
 | **Front-end · Cruds Completos** · 4 CRUDs (listas, palavras, salas e participantes), listagem e cadastro/edição em telas separadas, paginação, validação dos campos obrigatórios | Listagens em `src/pages/ListasPage.tsx`, `src/pages/PalavrasPage.tsx`, `src/pages/SalasPage.tsx` e `src/pages/SalaPage.tsx` (os participantes); cadastro e edição em `src/pages/FormularioListaPage.tsx`, `src/pages/FormularioPalavraPage.tsx`, `src/pages/FormularioSalaPage.tsx`, `src/pages/EntrarNaSalaPage.tsx` e `src/pages/FormularioApelidoPage.tsx`; a página fica no endereço (`?pagina=2`) por `src/hooks/useListagem.ts` e `src/componentes/Paginacao.tsx`; as regras dos campos em `src/validacao/esquemasDasListas.ts` e `src/validacao/esquemasDasSalas.ts`, aplicadas por `src/hooks/useFormulario.ts` | Os testes de cada uma dessas páginas (`*Page.test.tsx`) e `src/componentes/Paginacao.test.tsx` |
 | **Front-end · Componentização** · componentes genéricos, telas feitas de vários componentes, componentes e páginas em pastas separadas, componentes exclusivos de uma página em funções separadas | Genéricos em `src/componentes/`: `TabelaPaginada` (listagem de qualquer recurso), `Paginacao`, `AcoesDaLinha` (editar e apagar, sair ou tirar, com confirmação), `Formulario`, `Carregado`, `TopoDaPagina`, `CampoTexto`, `CampoEscolha`, `Aviso`, `Placar`, `Cronometro` e `Forca` (a mesma do jogo do dia, pequena e com o nome de cada jogador na sala). A tela da partida (`src/pages/PartidaPage.tsx`) junta `Forca`, `Palavra`, `Teclado`, `Cronometro` e `Placar`, e a da palavra do dia (`src/pages/JogoPage.tsx`) junta `Forca`, `Palavra`, `Teclado`, `Dialogo`, `Abas`, `DistribuicaoDeErros`, `ProximaPalavra` e `HistogramaDeLetras`. Telas em `src/pages/`. Exclusivos: `LinhaDaLista`, `LinhaDaPalavra`, `LinhaDaSala`, `AbasDasSalas`, `DadosDaSala`, `Convite`, `LinhaDoParticipante` e, na partida, `SalaDeEspera`, `EscolherPalavra`, `MinhaForcaNaVez`, `ForcasDosJogadores`, `ResultadoDaVezAnterior` e `FimDaPartida`; na palavra do dia, `JogoDoDiaNaTela` (a partida, que manda cada letra com o token da anterior), `PainelDoDia`, `AvisoDaConta`, `FimDoDia`, `ResultadoDoDia` (a janela do fim), `SeuProgresso`, `NumerosDoProgresso`, `ComoTodoMundoFoi`, `ConviteParaCriarConta` e `BotaoCompartilhar`. Cada um fica no arquivo da sua página | `src/componentes/AcoesDaLinha.test.tsx`, `src/componentes/Paginacao.test.tsx`, `src/componentes/Placar.test.tsx`, `src/componentes/Cronometro.test.tsx` e os testes das páginas |
@@ -105,7 +105,7 @@ como explica o README do `hangdle-backend`.
 |---|---|
 | `/` | Tela de entrada: Jogar, Entrar e Criar conta. |
 | `/cadastro` | Cadastro com nome, e-mail, CPF, senha e confirmação. Depois de criar a conta, leva para o login. |
-| `/login` | Login. Guarda o token no `localStorage` e leva para as estatísticas. |
+| `/login` | Login. Guarda o token no `localStorage` e leva para as estatísticas, ou de volta para a tela que pediu o login. |
 | `/jogo` | A palavra do dia, aberta para todo mundo. No fim, uma janela com o resultado: quem tem conta vê as partidas, a porcentagem de acerto, a sequência e com quantos erros acertou cada palavra; quem não tem vê o convite para criar uma. As duas mostram como todo mundo foi no dia, quanto falta para a próxima palavra e o botão de compartilhar o resultado (em quadrados, sem a palavra). |
 | `/estatisticas` | Só com login (área logada). Resumo, letras por dia com a tendência, histograma das partidas e a lista de partidas. |
 | `/perfil` | Só com login. Editar nome, CPF e senha (com confirmação). O e-mail aparece, mas não pode ser trocado. Fica no nome da pessoa, no cabeçalho. |
@@ -120,8 +120,13 @@ como explica o README do `hangdle-backend`.
 | `/salas/:id/partida` | Só com login e para quem está na sala. A partida: a espera (quem criou começa, com pelo menos 2 jogadores), a escolha da palavra (uma de 3 da lista, ou digitada), a própria forca com o teclado, o bonequinho de cada jogador, o resultado de cada palavra, o placar e o placar final. A página da sala tem o botão para chegar aqui. |
 | `/salas/:salaId/participantes/:id/editar` | Só com login. Trocar o próprio apelido na sala. |
 
-Quem está logado vê no cabeçalho o menu Jogar, Salas, Listas e Estatísticas. As telas
-com login ficam juntas em `src/Rotas.tsx`, dentro de `RotaProtegida`.
+O cabeçalho é uma linha só. O logotipo leva para a palavra do dia, e à direita fica
+o menu: para quem está logado, Salas, Listas, Estatísticas, o nome (que abre o
+perfil) e Sair; para quem não está, Salas e Entrar. Sem conta, clicar em Salas abre
+o recado "Faça login para jogar online", com os botões de entrar e de criar conta.
+As telas com login ficam juntas em `src/Rotas.tsx`, dentro de `RotaProtegida`, que
+manda para o login guardando o endereço: depois de entrar, a pessoa volta para onde
+ia (por exemplo, o convite de uma sala).
 
 ## Como o jogo funciona
 

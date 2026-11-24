@@ -4,10 +4,12 @@
 
 .cabecalho__linha {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px 16px;
     min-height: 64px;
+    padding: 10px 0;
 }
 
 .cabecalho__marca {
@@ -15,7 +17,39 @@
     text-decoration: none;
 }
 
-.cabecalho__usuario {
+.cabecalho__menu {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px 20px;
+    min-width: 0;
+    margin-left: auto;
+}
+
+.cabecalho__item {
+    padding: 4px 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--tinta-2);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cabecalho__item:hover {
+    color: var(--tinta);
+}
+
+.cabecalho__item[aria-current="page"] {
+    border-bottom-color: var(--marca);
+    color: var(--marca);
+}
+
+.cabecalho__conta {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -23,6 +57,7 @@
 }
 
 .cabecalho__nome {
+    max-width: 16ch;
     overflow: hidden;
     color: var(--tinta-2);
     font-size: 0.9375rem;
@@ -30,27 +65,27 @@
     white-space: nowrap;
 }
 
-.cabecalho__menu {
+.cabecalho__recado {
+    margin-top: 8px;
+    color: var(--tinta-2);
+}
+
+.cabecalho__acoes {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 20px;
-    padding-bottom: 10px;
+    gap: 12px;
+    margin-top: 20px;
 }
 
-.cabecalho__menu a {
-    padding: 4px 0;
-    border-bottom: 2px solid transparent;
-    color: var(--tinta-2);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    text-decoration: none;
-}
+@media (max-width: 600px) {
+    .cabecalho__linha--conta .cabecalho__conta {
+        order: 1;
+    }
 
-.cabecalho__menu a:hover {
-    color: var(--tinta);
-}
-
-.cabecalho__menu a[aria-current="page"] {
-    border-bottom-color: var(--marca);
-    color: var(--marca);
+    .cabecalho__linha--conta .cabecalho__menu {
+        order: 2;
+        flex-basis: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+    }
 }
