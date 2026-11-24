@@ -36,7 +36,7 @@ function Resumo({ resumo }: { resumo: ResumoDoHistorico }) {
         { rotulo: "Acertos", valor: porcentagem.format(resumo.taxaDeAcerto) },
         { rotulo: "Sequência atual", valor: String(resumo.sequenciaAtual) },
         { rotulo: "Melhor sequência", valor: String(resumo.melhorSequencia) },
-        { rotulo: "Média de letras", valor: resumo.mediaDeLetras === null ? "—" : decimal.format(resumo.mediaDeLetras) },
+        { rotulo: "Média de letras chutadas", valor: resumo.mediaDeLetras === null ? "—" : decimal.format(resumo.mediaDeLetras) },
     ];
     return (
         <dl className="estatisticas__resumo">
@@ -77,7 +77,7 @@ function TabelaDePartidas({ resultados }: { resultados: ResultadoDiario[] }) {
                     <th scope="col">Palavra</th>
                     <th scope="col">Resultado</th>
                     <th scope="col" className="numero">
-                        Letras
+                        Letras chutadas
                     </th>
                     <th scope="col" className="numero">
                         Erros

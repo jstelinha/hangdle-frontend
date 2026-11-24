@@ -285,7 +285,7 @@ function NumerosDoProgresso({ resumo }: { resumo: ResumoDoHistorico }) {
             numeros={[
                 { rotulo: "partidas", valor: String(resumo.partidas) },
                 { rotulo: "de acertos", valor: porcentagem.format(resumo.taxaDeAcerto) },
-                { rotulo: "sequência", valor: String(resumo.sequenciaAtual) },
+                { rotulo: "sequência atual", valor: String(resumo.sequenciaAtual) },
                 { rotulo: "melhor sequência", valor: String(resumo.melhorSequencia) },
             ]}
         />
@@ -485,6 +485,8 @@ function recadoDaLetra(letra: string, jogo: JogoDoDia): string {
 function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
     const [jogo, setJogo] = useState(inicial);
     const [aviso, setAviso] = useState("");
+    // A falha de envio é um erro (Aviso vermelho, role="alert"), e não uma dica: fica separada do aviso do jogo.
+    const [falha, setFalha] = useState<string | null>(null);
     // O token muda a cada resposta, e a próxima letra da fila precisa do mais novo: por isso fica num ref.
     const token = useRef(inicial.token);
     const pedir = useFilaDeLetras(
@@ -493,10 +495,14 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
             token.current = novo.token;
             guardarChutesDoDia(novo.dia, novo.letras);
             setJogo(novo);
+            setFalha(null);
             setAviso(recadoDaLetra(letra, novo));
             return novo.terminou;
         },
-        (falha) => setAviso(traduzirErro(falha).mensagem),
+        (erro) => {
+            setAviso("");
+            setFalha(traduzirErro(erro).mensagem);
+        },
     );
     // No fim, com a palavra, a Rodada desenha as casas que faltaram e faz o resumo.
     const fim = jogo.terminou && jogo.palavra ? Rodada.aPartirDosChutes(jogo.palavra, jogo.letras) : null;
@@ -528,6 +534,7 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
             <PainelDoDia categoria={jogo.categoria} erros={jogo.erros} />
             <Forca erros={jogo.erros} />
             <Palavra casas={fim ? fim.casas : casasDaForca(jogo.casas)} mostrarResposta={fim !== null} />
+            <Aviso mensagem={falha} />
             <p className="jogo__aviso" role="status">
                 {aviso}
             </p>

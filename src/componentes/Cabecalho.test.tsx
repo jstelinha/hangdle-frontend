@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
-import { abrir, entrarComo, tokenQueExpiraEm } from "../testes/ferramentas";
+import { abrir, entrarComo, recadosDeStatus, statusComTexto, tokenQueExpiraEm } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 const get = vi.mocked(api.get);
@@ -84,7 +84,7 @@ describe("cabeçalho", () => {
         await usuario.click(menu().getByRole("button", { name: "Salas" }));
 
         await usuario.click(within(screen.getByRole("dialog")).getByRole("link", { name: "Entrar" }));
-        expect(screen.getByRole("status").textContent).toBe("Faça login para jogar online.");
+        expect(statusComTexto().textContent).toBe("Faça login para jogar online.");
         await entrar(usuario);
 
         expect(await screen.findByRole("heading", { name: "Salas" })).toBeTruthy();
@@ -97,7 +97,7 @@ describe("cabeçalho", () => {
 
         await usuario.click(cabecalho().getByRole("link", { name: "Entrar" }));
         expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
-        expect(screen.queryByRole("status")).toBeNull();
+        expect(recadosDeStatus()).toEqual([]);
         await entrar(usuario);
 
         expect(await screen.findByRole("heading", { name: "Palavra do dia" })).toBeTruthy();
@@ -117,7 +117,7 @@ describe("cabeçalho", () => {
         const usuario = userEvent.setup();
         abrir("/salas?filtro=minhas");
 
-        expect(screen.getByRole("status").textContent).toBe("Faça login para jogar online.");
+        expect(statusComTexto().textContent).toBe("Faça login para jogar online.");
         await entrar(usuario);
 
         expect(await screen.findByRole("heading", { name: "Salas" })).toBeTruthy();

@@ -64,7 +64,7 @@ function SalaDeEspera({ estado, souDono, comecando, aoComecar }: PropsDaEspera) 
             </ul>
             {souDono ? (
                 <>
-                    <button type="button" className="botao partida__acao" disabled={poucos || comecando} onClick={aoComecar}>
+                    <button type="button" className="botao partida__acao" disabled={poucos || comecando} aria-busy={comecando} onClick={aoComecar}>
                         {comecando ? "Começando..." : "Começar a partida"}
                     </button>
                     {poucos && <p className="partida__recado">A partida precisa de pelo menos 2 jogadores. Mande o link da sala para alguém.</p>}
@@ -99,7 +99,7 @@ function OpcoesDaLista({ opcoes, aoEscolher }: { opcoes: OpcaoDePalavra[]; aoEsc
             <ul className="partida__opcoes">
                 {opcoes.map((opcao) => (
                     <li key={opcao.id}>
-                        <button type="button" className="partida__opcao" disabled={enviando} onClick={() => void escolher(opcao.id)}>
+                        <button type="button" className="partida__opcao" disabled={enviando} aria-busy={enviando} onClick={() => void escolher(opcao.id)}>
                             <strong>{opcao.palavra}</strong>
                             {opcao.dica && <span className="partida__dica-da-opcao">Dica: {opcao.dica}</span>}
                         </button>
@@ -128,7 +128,7 @@ function PalavraDigitada({ aoEscolher }: { aoEscolher: AoEscolher }) {
                 Só você vê a palavra. Use só letras, com espaço ou hífen entre as partes.
             </CampoTexto>
             <CampoTexto id="dica" rotulo="Dica (opcional)" valor={valores.dica} aoMudar={(valor) => alterar("dica", valor)} erro={erros.dica} maxLength={DICA.maximo} autoComplete="off" />
-            <button type="submit" className="botao partida__acao" disabled={enviando}>
+            <button type="submit" className="botao partida__acao" disabled={enviando} aria-busy={enviando}>
                 {enviando ? "Enviando..." : "Escolher esta palavra"}
             </button>
         </form>
@@ -161,10 +161,18 @@ function recadoDaForca(forca: MinhaForca): string {
 // só (key = número da vez), então a fila também.
 function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca: MinhaForca; aoChutar: AoChutar }) {
     const [aviso, setAviso] = useState("");
+    const [falha, setFalha] = useState<string | null>(null);
     const { certas, erradas } = separarLetras(forca.casas, forca.letras);
     const pedir = useFilaDeLetras(
-        async (letra) => (await aoChutar(letra)).vez?.minhaForca?.terminou ?? false,
-        (falha) => setAviso(traduzirErro(falha).mensagem),
+        async (letra) => {
+            const estado = await aoChutar(letra);
+            setFalha(null);
+            return estado.vez?.minhaForca?.terminou ?? false;
+        },
+        (erro) => {
+            setAviso("");
+            setFalha(traduzirErro(erro).mensagem);
+        },
     );
 
     function teclar(tecla: string) {
@@ -200,6 +208,7 @@ function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca:
             </p>
             <Forca erros={forca.erros} />
             <Palavra casas={casasDaForca(forca.casas)} mostrarResposta={false} />
+            <Aviso mensagem={falha} />
             <p className="jogo__aviso" role="status">
                 {aviso || recadoDaForca(forca)}
             </p>
@@ -461,7 +470,7 @@ export function PartidaPage() {
                                     <VezDaPartida estado={estado} vez={estado.vez} aoEscolher={escolher} aoChutar={chutar} />
                                 ) : (
                                     <p className="jogo__aviso" role="status">
-                                        Preparando a próxima vez...
+                                        Preparando a próxima palavra...
                                     </p>
                                 )}
                                 <Placar titulo="Placar" linhas={placar} />

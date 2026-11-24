@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { SEM_RESPOSTA } from "../api/erros";
-import { abrir, entrarComo, erroDaApi, erroDeRede } from "../testes/ferramentas";
+import { abrir, entrarComo, erroDaApi, erroDeRede, esperarStatusComTexto } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 const get = vi.mocked(api.get);
@@ -88,7 +88,7 @@ describe("listagem das listas", () => {
         await usuario.click(screen.getByRole("button", { name: "Sim, apagar" }));
 
         expect(apagar).toHaveBeenCalledWith("/listas/3");
-        const aviso = await screen.findByRole("status");
+        const aviso = await esperarStatusComTexto();
         expect(aviso.textContent).toBe("A lista Animais foi apagada, com as palavras dela.");
         // A linha sumiu com o foco dentro: ele vai para o aviso, e não para o body.
         expect(document.activeElement).toBe(aviso);

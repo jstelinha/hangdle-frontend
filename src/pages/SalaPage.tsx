@@ -157,7 +157,7 @@ export function SalaPage() {
                 navegar("/salas?filtro=minhas", comAviso(sala ? `Você saiu da sala ${sala.nome}.` : "Você saiu da sala."));
                 return;
             }
-            setAviso({ tipo: "sucesso", mensagem: `${participante.apelido} saiu da sala.` });
+            setAviso({ tipo: "sucesso", mensagem: `Você tirou ${participante.apelido} da sala.` });
             recarregarSala();
             recarregarParticipantes();
         } catch (erro) {

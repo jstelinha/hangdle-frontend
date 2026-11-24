@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
 import { encerrarSessao, salvarSessao } from "../sessao/sessao";
-import { abrir, erroDaApi, erroDeRede, tokenQueExpiraEm } from "../testes/ferramentas";
+import { abrir, erroDaApi, erroDeRede, statusComTexto, tokenQueExpiraEm } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 const post = vi.mocked(api.post);
@@ -125,7 +125,7 @@ describe("tela de login", () => {
         abrir("/listas");
 
         expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
-        expect(screen.getByRole("status").textContent).toBe("Sua sessão expirou. Entre de novo para continuar.");
+        expect(statusComTexto().textContent).toBe("Sua sessão expirou. Entre de novo para continuar.");
 
         await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
 
@@ -137,6 +137,6 @@ describe("tela de login", () => {
         abrir("/listas");
 
         expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
-        expect(screen.getByRole("status").textContent).toBe("Entre na sua conta para continuar.");
+        expect(statusComTexto().textContent).toBe("Entre na sua conta para continuar.");
     });
 });

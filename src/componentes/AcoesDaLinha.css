@@ -23,3 +23,9 @@
     background: var(--perigo-fundo);
     color: var(--perigo);
 }
+
+/* O botão de confirmar continua vermelho com o mouse em cima (o :hover do .botao--discreto mudaria o fundo). */
+.acoes .acoes__apagar:hover:not(:disabled) {
+    border-color: var(--perigo);
+    background: var(--perigo-fundo);
+}

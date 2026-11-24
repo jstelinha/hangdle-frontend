@@ -11,6 +11,8 @@
     --borda-campo: #8a887f;
     --marca: #0f7f58;
     --marca-tinta: #ffffff;
+    /* O fundo do botão principal com o mouse em cima (6,53:1 com o texto). */
+    --marca-realce: #0c6b4a;
     --letra-errada: #6f6d67;
     --letra-errada-tinta: #ffffff;
     --tecla: #e6e5df;
@@ -39,6 +41,7 @@
         --borda-campo: #6f6d67;
         --marca: #2fa37c;
         --marca-tinta: #0d0d0d;
+        --marca-realce: #3bb88d;
         --letra-errada: #3a3936;
         --letra-errada-tinta: #c3c2b7;
         --tecla: #2c2c2a;
@@ -65,6 +68,7 @@
     --borda-campo: #6f6d67;
     --marca: #2fa37c;
     --marca-tinta: #0d0d0d;
+    --marca-realce: #3bb88d;
     --letra-errada: #3a3936;
     --letra-errada-tinta: #c3c2b7;
     --tecla: #2c2c2a;
@@ -166,8 +170,18 @@ a {
     cursor: pointer;
 }
 
+.botao:hover:not(:disabled) {
+    border-color: var(--marca-realce);
+    background: var(--marca-realce);
+}
+
+/* Desligado por regra (como "Começar a partida" com 1 jogador): não dá. Enviando (aria-busy): espere. */
 .botao:disabled {
     opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.botao[aria-busy="true"] {
     cursor: progress;
 }
 
@@ -177,6 +191,11 @@ a {
     border-color: var(--regua-forte);
     background: transparent;
     color: var(--tinta);
+}
+
+.botao--discreto:hover:not(:disabled) {
+    border-color: var(--tinta-3);
+    background: var(--tecla);
 }
 
 .botao--largo {

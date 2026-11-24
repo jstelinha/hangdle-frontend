@@ -146,7 +146,7 @@ export function PerfilPage() {
                             autoComplete="new-password"
                         />
 
-                        <button type="submit" className="botao botao--largo autenticacao__enviar" disabled={enviando}>
+                        <button type="submit" className="botao botao--largo autenticacao__enviar" disabled={enviando} aria-busy={enviando}>
                             {enviando ? "Salvando..." : "Salvar"}
                         </button>
                     </form>

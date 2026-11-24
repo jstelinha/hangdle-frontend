@@ -1,5 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipContentProps } from "recharts";
-import type { ColunaDeLetras } from "../../jogo/histogramaDeLetras";
+import { rotuloComVoce, type ColunaDeLetras } from "../../jogo/histogramaDeLetras";
 import { COR_EIXO, COR_GRADE, COR_TEXTO, COR_TEXTO_EIXO, COR_TODOS, COR_VOCE } from "./cores";
 import { Dica } from "./Dica";
 import { Legenda } from "./Legenda";
@@ -43,6 +43,7 @@ type Props = {
 // Rubrica de Probabilidade e Estatística - Análise Descritiva - Utilizar gráficos adequados aos objetivos de negócio (histogramas, dispersão, barras e colunas, séries temporais, regressão)
 export function HistogramaDeLetras({ titulo, subtitulo, nota, unidade, colunas, tabelaSoParaLeitor = false }: Props) {
     const temDestaque = colunas.some((coluna) => coluna.destaque);
+    const dados = colunas.map((coluna) => ({ ...coluna, eixo: rotuloComVoce(coluna) }));
 
     return (
         <figure className="grafico">
@@ -60,9 +61,9 @@ export function HistogramaDeLetras({ titulo, subtitulo, nota, unidade, colunas, 
             )}
             <div className="grafico__area">
                 <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={colunas} margin={{ top: 24, right: 8, bottom: 0, left: 0 }} barCategoryGap="16%">
+                    <BarChart data={dados} margin={{ top: 24, right: 8, bottom: 0, left: 0 }} barCategoryGap="16%">
                         <CartesianGrid vertical={false} stroke={COR_GRADE} />
-                        <XAxis dataKey="rotulo" tickLine={false} axisLine={{ stroke: COR_EIXO }} tick={{ fill: COR_TEXTO_EIXO, fontSize: 12 }} />
+                        <XAxis dataKey="eixo" tickLine={false} axisLine={{ stroke: COR_EIXO }} tick={{ fill: COR_TEXTO_EIXO, fontSize: 12 }} />
                         <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: COR_TEXTO_EIXO, fontSize: 12 }} width={32} />
                         <Tooltip
                             content={(propriedades) => <DicaDaColuna {...propriedades} unidade={unidade} temDestaque={temDestaque} />}
@@ -81,7 +82,7 @@ export function HistogramaDeLetras({ titulo, subtitulo, nota, unidade, colunas, 
             <TabelaDoGrafico<ColunaDeLetras>
                 titulo={titulo}
                 colunas={[
-                    { titulo: "Letras chutadas", valor: (coluna) => (coluna.destaque ? `${coluna.rotulo} (você)` : coluna.rotulo) },
+                    { titulo: "Letras chutadas", valor: rotuloComVoce },
                     { titulo: unidade === "jogadores" ? "Jogadores" : "Partidas", valor: (coluna) => coluna.quantidade, numerica: true },
                 ]}
                 linhas={colunas}

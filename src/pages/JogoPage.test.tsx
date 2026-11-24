@@ -5,7 +5,7 @@ import { api } from "../api/axios";
 import { SEM_RESPOSTA } from "../api/erros";
 import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
 import { Rodada } from "../jogo/Rodada";
-import { abrir, entrarComo, erroDaApi, erroDeRede } from "../testes/ferramentas";
+import { abrir, entrarComo, erroDaApi, erroDeRede, statusComTexto } from "../testes/ferramentas";
 import type { JogoDoDia } from "../types/jogo";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
@@ -166,16 +166,15 @@ describe("palavra do dia", () => {
 
     it("cada letra diz, no aviso que o leitor de tela lê, se estava na palavra", async () => {
         await abrirJogo();
-        const aviso = screen.getByRole("status");
 
         await clicar("M");
-        expect(aviso.textContent).toBe("M está na palavra.");
+        expect(statusComTexto().textContent).toBe("M está na palavra.");
 
         await clicar("A");
-        expect(aviso.textContent).toBe("A está na palavra (2 casas).");
+        expect(statusComTexto().textContent).toBe("A está na palavra (2 casas).");
 
         await clicar("Z");
-        expect(aviso.textContent).toBe("Z não está na palavra. 1 de 6 erros.");
+        expect(statusComTexto().textContent).toBe("Z não está na palavra. 1 de 6 erros.");
     });
 
     it("letra certa revela, errada desenha o boneco e repetida só avisa", async () => {
@@ -263,8 +262,9 @@ describe("palavra do dia", () => {
         post.mockRejectedValueOnce(erroDeRede());
 
         await clicar("M");
-        expect(screen.getByText(SEM_RESPOSTA)).toBeTruthy();
+        expect(screen.getByRole("alert").textContent).toBe(SEM_RESPOSTA);
         await clicar("M");
+        expect(screen.queryByRole("alert")).toBeNull();
 
         expect(screen.getByRole("img", { name: "Palavra: M, vazio, vazio, vazio" })).toBeTruthy();
     });
@@ -368,7 +368,7 @@ describe("palavra do dia", () => {
         await janela.findByText("partidas", { selector: "dt" });
         expect(numeroDoProgresso(janela, "partidas")).toBe("3");
         expect(numeroDoProgresso(janela, "de acertos")).toMatch(/^67\s?%$/);
-        expect(numeroDoProgresso(janela, "sequência")).toBe("2");
+        expect(numeroDoProgresso(janela, "sequência atual")).toBe("2");
         expect(numeroDoProgresso(janela, "melhor sequência")).toBe("2");
         expect(numeroDoProgresso(janela, "letras chutadas")).toBe("4");
         expect(numeroDoProgresso(janela, "erro")).toBe("1");

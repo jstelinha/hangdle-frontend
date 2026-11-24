@@ -56,7 +56,7 @@ describe("página de estatísticas", () => {
         expect(valorDoResumo("Partidas")).toBe("3");
         expect(valorDoResumo("Acertos")).toBe("67%");
         expect(valorDoResumo("Sequência atual")).toBe("2");
-        expect(valorDoResumo("Média de letras")).toBe("6");
+        expect(valorDoResumo("Média de letras chutadas")).toBe("6");
         expect(within(tabela).getAllByRole("row")).toHaveLength(4);
         expect(within(tabela).getByText("ONÇA")).toBeTruthy();
     });

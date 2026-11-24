@@ -112,3 +112,9 @@
 .partida__fase {
     margin-top: 24px;
 }
+
+/* Enquanto a palavra escolhida vai para o back, as opções ficam desligadas: que se veja. */
+.partida__opcao:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
