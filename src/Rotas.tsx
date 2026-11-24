@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { RotaProtegida } from "./componentes/RotaProtegida";
 import { CadastroPage } from "./pages/CadastroPage";
 import { EntrarNaSalaPage } from "./pages/EntrarNaSalaPage";
@@ -7,7 +7,6 @@ import { FormularioApelidoPage } from "./pages/FormularioApelidoPage";
 import { FormularioListaPage } from "./pages/FormularioListaPage";
 import { FormularioPalavraPage } from "./pages/FormularioPalavraPage";
 import { FormularioSalaPage } from "./pages/FormularioSalaPage";
-import { InicioPage } from "./pages/InicioPage";
 import { JogoPage } from "./pages/JogoPage";
 import { ListasPage } from "./pages/ListasPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -22,7 +21,8 @@ import { SalasPage } from "./pages/SalasPage";
 export function Rotas() {
     return (
         <Routes>
-            <Route path="/" element={<InicioPage />} />
+            {/* Não tem tela de entrada: o jogo é a primeira coisa, e o cabeçalho já tem Entrar e Criar conta. */}
+            <Route path="/" element={<Navigate to="/jogo" replace />} />
             <Route path="/cadastro" element={<CadastroPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/jogo" element={<JogoPage />} />

@@ -118,6 +118,13 @@ describe("palavra do dia", () => {
         responderComo(SERVIDOR);
     });
 
+    it("o endereço do site abre direto a palavra do dia", async () => {
+        abrir("/");
+
+        expect(await screen.findByRole("heading", { name: "Palavra do dia" })).toBeTruthy();
+        expect(within(screen.getByRole("banner")).getByRole("link", { name: "Hangdle" }).getAttribute("aria-current")).toBe("page");
+    });
+
     it("visitante joga sem conta e vê no cabeçalho onde entrar", async () => {
         await abrirJogo();
 

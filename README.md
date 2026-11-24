@@ -103,7 +103,7 @@ como explica o README do `hangdle-backend`.
 
 | Rota | O que faz |
 |---|---|
-| `/` | Tela de entrada: Jogar, Entrar e Criar conta. |
+| `/` | Leva direto para a palavra do dia (`/jogo`). Não tem tela de entrada: o cabeçalho já tem Entrar e Criar conta. |
 | `/cadastro` | Cadastro com nome, e-mail, CPF, senha e confirmação. Depois de criar a conta, leva para o login. |
 | `/login` | Login. Guarda o token no `localStorage` e leva para as estatísticas, ou de volta para a tela que pediu o login. |
 | `/jogo` | A palavra do dia, aberta para todo mundo. No fim, uma janela com o resultado: quem tem conta vê as partidas, a porcentagem de acerto, a sequência e com quantos erros acertou cada palavra; quem não tem vê o convite para criar uma. As duas mostram como todo mundo foi no dia, quanto falta para a próxima palavra e o botão de compartilhar o resultado (em quadrados, sem a palavra). |

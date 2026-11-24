@@ -9,7 +9,7 @@ export function NotFoundPage() {
                 <h1 className="titulo">Página não encontrada</h1>
                 <p className="subtitulo">O endereço digitado não existe no Hangdle.</p>
                 <p className="secao">
-                    <Link to="/">Voltar para o início</Link>
+                    <Link to="/jogo">Ir para a palavra do dia</Link>
                 </p>
             </main>
         </div>
