@@ -1,4 +1,4 @@
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach } from "vitest";
 
 class ResizeObserverDeTeste {
@@ -14,6 +14,10 @@ class ResizeObserverDeTeste {
 }
 
 globalThis.ResizeObserver ??= ResizeObserverDeTeste;
+
+// Com os arquivos de teste rodando em paralelo, uma tela que acabou de navegar (ou que importa o recharts sob demanda)
+// pode passar de 1 s para aparecer, e o teste falhava sem motivo. As buscas que esperam (findBy, waitFor) vão até 3 s.
+configure({ asyncUtilTimeout: 3000 });
 
 // O jsdom tem o <dialog>, mas não abre nem fecha. Aqui ele só liga e desliga o atributo open, que é o que deixa o
 // conteúdo visível para os testes, e avisa o close como o navegador avisa.
