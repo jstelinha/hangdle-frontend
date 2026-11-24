@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSessao } from "../sessao/contexto";
 import { encerrarSessao } from "../sessao/sessao";
-import type { Sessao } from "../types/usuario";
 import { Dialogo } from "./Dialogo";
 import { Logotipo } from "./Logotipo";
 import "./Cabecalho.css";
@@ -11,7 +10,7 @@ const VOLTAR_PARA_AS_SALAS = { voltarPara: "/salas", pedeConta: true };
 // O Entrar do cabeçalho volta para onde a pessoa estava, menos do próprio login ou do cadastro.
 const SEM_VOLTA = ["/login", "/cadastro"];
 
-function MenuDaConta({ sessao }: { sessao: Sessao }) {
+function MenuDaConta() {
     const navegar = useNavigate();
 
     function sair() {
@@ -33,9 +32,9 @@ function MenuDaConta({ sessao }: { sessao: Sessao }) {
                 </NavLink>
             </nav>
             <div className="cabecalho__conta">
-                <Link to="/perfil" className="cabecalho__nome" title="Seu perfil">
-                    {sessao.usuario.nome}
-                </Link>
+                <NavLink to="/perfil" className="cabecalho__item">
+                    Perfil
+                </NavLink>
                 <button type="button" className="botao botao--discreto" onClick={sair}>
                     Sair
                 </button>
@@ -92,7 +91,7 @@ export function Cabecalho() {
                 <NavLink to="/jogo" className="cabecalho__marca" title="Jogar a palavra do dia">
                     <Logotipo />
                 </NavLink>
-                {sessao ? <MenuDaConta sessao={sessao} /> : <MenuDoVisitante />}
+                {sessao ? <MenuDaConta /> : <MenuDoVisitante />}
             </div>
         </header>
     );

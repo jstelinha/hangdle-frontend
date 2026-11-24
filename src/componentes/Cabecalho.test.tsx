@@ -42,14 +42,15 @@ describe("cabeçalho", () => {
         expect(cabecalho().queryByRole("link", { name: "Jogar" })).toBeNull();
     });
 
-    it("quem tem conta vê tudo numa linha: as telas da conta, o nome e o sair", () => {
+    it("quem tem conta vê tudo numa linha: as telas da conta, o perfil e o sair", () => {
         entrarComo("Larissa Souza");
         abrir("/login");
 
         expect(menu().getByRole("link", { name: "Salas" }).getAttribute("href")).toBe("/salas");
         expect(menu().getByRole("link", { name: "Listas" })).toBeTruthy();
         expect(menu().getByRole("link", { name: "Estatísticas" })).toBeTruthy();
-        expect(cabecalho().getByRole("link", { name: "Larissa Souza" }).getAttribute("href")).toBe("/perfil");
+        expect(cabecalho().getByRole("link", { name: "Perfil" }).getAttribute("href")).toBe("/perfil");
+        expect(cabecalho().queryByText("Larissa Souza")).toBeNull();
         expect(cabecalho().getByRole("button", { name: "Sair" })).toBeTruthy();
     });
 

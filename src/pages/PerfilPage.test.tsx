@@ -1,7 +1,8 @@
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
+import { lerSessao } from "../sessao/sessao";
 import { abrir, entrarComo, erroDaApi } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
@@ -83,7 +84,7 @@ describe("página de perfil", () => {
         expect(screen.getByText(mensagem)).toBeTruthy();
     });
 
-    it("salva sem mandar o e-mail e o nome novo aparece no cabeçalho", async () => {
+    it("salva sem mandar o e-mail e o nome novo vai para a sessão, que o app inteiro lê", async () => {
         put.mockResolvedValueOnce({ data: { id: 7, nome: "Larissa Andrade", email: "larissa@exemplo.com" } });
         const usuario = userEvent.setup();
         await abrirPerfil();
@@ -95,7 +96,7 @@ describe("página de perfil", () => {
 
         expect(await screen.findByText("Seus dados foram atualizados.")).toBeTruthy();
         expect(put).toHaveBeenCalledWith("/usuarios/7", { nome: "Larissa Andrade", cpf: "529.982.247-25", senha: "Forca#2027" });
-        expect(within(screen.getByRole("banner")).getByRole("link", { name: "Larissa Andrade" })).toBeTruthy();
+        expect(lerSessao()?.usuario.nome).toBe("Larissa Andrade");
         expect(campo("Senha nova").value).toBe("");
     });
 

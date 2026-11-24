@@ -131,12 +131,12 @@ describe("palavra do dia", () => {
         expect(within(screen.getByRole("banner")).getByRole("link", { name: "Entrar" })).toBeTruthy();
     });
 
-    it("quem entrou vê o próprio nome no cabeçalho", async () => {
+    it("quem entrou vê o perfil no cabeçalho", async () => {
         entrarComo("Larissa Souza");
 
         await abrirJogo();
 
-        expect(screen.getByText("Larissa Souza")).toBeTruthy();
+        expect(within(screen.getByRole("banner")).getByRole("link", { name: "Perfil" })).toBeTruthy();
         expect(screen.getByRole("button", { name: "Sair" })).toBeTruthy();
     });
 

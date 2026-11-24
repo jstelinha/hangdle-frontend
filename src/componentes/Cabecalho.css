@@ -56,15 +56,6 @@
     min-width: 0;
 }
 
-.cabecalho__nome {
-    min-width: 0;
-    max-width: 16ch;
-    overflow: hidden;
-    color: var(--tinta-2);
-    font-size: 0.9375rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 .cabecalho__recado {
     margin-top: 8px;

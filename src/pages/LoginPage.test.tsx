@@ -33,7 +33,7 @@ describe("tela de login", () => {
         expect(post).toHaveBeenCalledWith("/login", { email: "larissa@exemplo.com", senha: "Hangdle#2026" });
         expect(await screen.findByRole("heading", { name: "Suas estatísticas" })).toBeTruthy();
         expect(localStorage.getItem("hangdle.token")).toBe(token);
-        expect(screen.getByText("Larissa Souza")).toBeTruthy();
+        expect(screen.getByRole("link", { name: "Perfil" })).toBeTruthy();
     });
 
     it("e-mail ou senha errados: mostra a mensagem, não guarda nada e fica no login", async () => {
