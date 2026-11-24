@@ -77,6 +77,3 @@ export function esquemaEntrada(salaComSenha: boolean) {
 }
 
 export const esquemaApelido = z.object({ apelido });
-
-export type FormularioEntrada = z.input<ReturnType<typeof esquemaEntrada>>;
-export type FormularioApelido = z.input<typeof esquemaApelido>;
