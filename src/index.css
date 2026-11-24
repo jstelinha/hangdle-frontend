@@ -7,6 +7,8 @@
     --tinta-3: #6f6d67;
     --regua: #dddcd5;
     --regua-forte: #b9b7ad;
+    /* Borda de campo e de casa vazia: precisa de 3:1 contra o fundo (WCAG 1.4.11). 3,46:1 na superfície, 3,26:1 no fundo. */
+    --borda-campo: #8a887f;
     --marca: #0f7f58;
     --marca-tinta: #ffffff;
     --letra-errada: #6f6d67;
@@ -34,6 +36,7 @@
         --tinta-3: #a3a198;
         --regua: #2c2c2a;
         --regua-forte: #4d4c48;
+        --borda-campo: #6f6d67;
         --marca: #2fa37c;
         --marca-tinta: #0d0d0d;
         --letra-errada: #3a3936;
@@ -59,6 +62,7 @@
     --tinta-3: #a3a198;
     --regua: #2c2c2a;
     --regua-forte: #4d4c48;
+    --borda-campo: #6f6d67;
     --marca: #2fa37c;
     --marca-tinta: #0d0d0d;
     --letra-errada: #3a3936;

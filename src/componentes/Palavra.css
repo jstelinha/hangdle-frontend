@@ -27,7 +27,7 @@
     place-items: center;
     width: var(--tamanho);
     height: var(--tamanho);
-    border: 2px solid var(--regua-forte);
+    border: 2px solid var(--borda-campo);
     border-radius: var(--raio-casa);
     background: var(--superficie);
     font-size: calc(var(--tamanho) * 0.58);

@@ -11,8 +11,10 @@
 }
 
 .aviso--sucesso {
+    border-left-color: var(--marca);
     background: var(--sucesso-fundo);
-    color: var(--marca);
+    /* O texto em --tinta (15:1); o verde fica só na borda, porque em texto dava 4,40:1 no tema claro. */
+    color: var(--tinta);
 }
 
 .aviso--informacao {
