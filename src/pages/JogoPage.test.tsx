@@ -71,7 +71,6 @@ function numeroDoProgresso(janela: ReturnType<typeof within>, rotulo: string): s
 }
 
 async function verComoTodoMundoFoi() {
-    fireEvent.click(await screen.findByRole("tab", { name: "Todo mundo hoje" }));
     return screen.findByRole("table", { name: "Como todo mundo foi hoje" });
 }
 
@@ -347,7 +346,7 @@ describe("palavra do dia", () => {
         expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("2");
     });
 
-    it("quem tem conta vê os seus números e com quantos erros acertou", async () => {
+    it("quem tem conta vê os seus números e como ficou a forca de hoje", async () => {
         const anteriores = [
             { ...MACA_DO_DIA, dia: "2026-11-02", letras: ["M", "B", "Z", "A", "C"], chutes: 5, erros: 2, acertou: true },
             { ...MACA_DO_DIA, dia: "2026-11-01", letras: ["Z", "W", "Y", "K", "L", "B"], chutes: 6, erros: 6, acertou: false },
@@ -372,12 +371,19 @@ describe("palavra do dia", () => {
         expect(numeroDoProgresso(janela, "melhor sequência")).toBe("2");
         expect(numeroDoProgresso(janela, "letras chutadas")).toBe("4");
         expect(numeroDoProgresso(janela, "erro")).toBe("1");
-        const distribuicao = within(janela.getByRole("table", { name: "Com quantos erros você acertou" }));
-        const quantas = (linha: string) => distribuicao.getByRole("rowheader", { name: linha }).nextElementSibling?.textContent;
-        expect(quantas("0 erros")).toBe("0");
-        expect(quantas("1 erro (hoje)")).toBe("1");
-        expect(quantas("2 erros")).toBe("1");
-        expect(quantas("Boneco completo")).toBe("1");
+        const forca = within(janela.getByRole("region", { name: "Como ficou a sua forca" }));
+        expect(forca.getByRole("img", { name: "Forca com cabeça" })).toBeTruthy();
+        expect(janela.queryByRole("tab")).toBeNull();
+        expect(await janela.findByRole("table", { name: "Como todo mundo foi hoje" })).toBeTruthy();
+    });
+
+    it("quem não tem conta também vê como ficou a forca", async () => {
+        jaChutou(DIA, ["Z", "W", "M", "A", "C"]);
+
+        await abrirJogo();
+
+        const janela = await janelaDoResultado();
+        expect(within(janela.getByRole("region", { name: "Como ficou a sua forca" })).getByRole("img", { name: "Forca com cabeça e tronco" })).toBeTruthy();
     });
 
     it("resultado que já estava na conta conta como salvo", async () => {

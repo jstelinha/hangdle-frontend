@@ -1,14 +1,12 @@
 import axios from "axios";
-import { useEffect, useEffectEvent, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { buscarEstatisticasDoDia, chutarNoDia, comecarJogoDoDia } from "../api/palavraDoDia";
 import { buscarHistorico, jaEstavaSalvo, salvarResultado } from "../api/resultados";
-import { Abas } from "../componentes/Abas";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { Dialogo } from "../componentes/Dialogo";
-import { DistribuicaoDeErros } from "../componentes/DistribuicaoDeErros";
 import { Forca } from "../componentes/Forca";
 import { HistogramaDeLetras } from "../componentes/graficos/HistogramaDeLetras";
 import { Palavra } from "../componentes/Palavra";
@@ -18,7 +16,6 @@ import { useFilaDeLetras } from "../hooks/useFilaDeLetras";
 import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { guardarChutesDoDia, lerChutesDoDia } from "../jogo/chutesDoDia";
 import { compartilharTexto, textoDoResultado } from "../jogo/compartilhar";
-import { distribuicaoDeErros } from "../jogo/distribuicaoDeErros";
 import { casasDaForca, separarLetras } from "../jogo/forcaDaSala";
 import { colunasPorLetras, somarResultado } from "../jogo/histogramaDeLetras";
 import { resumirHistorico, type ResumoDoHistorico } from "../jogo/historico";
@@ -309,40 +306,26 @@ function resultadoDaRodada(rodada: Rodada, dia: string, categoria: string): Resu
     };
 }
 
-type PropsDoProgresso = {
-    historico: Busca<ResultadoDiario[]>;
-    hoje: ResultadoDiario;
-    todoMundo: ReactNode;
-};
-
-function SeuProgresso({ historico, hoje, todoMundo }: PropsDoProgresso) {
+function SeuProgresso({ historico, hoje }: { historico: Busca<ResultadoDiario[]>; hoje: ResultadoDiario }) {
     if (historico.situacao === "carregando") {
         return <p className="resultado__recado">Carregando o seu progresso...</p>;
     }
     if (historico.situacao === "falhou") {
-        return (
-            <>
-                <p className="resultado__recado">Não deu para carregar o seu progresso agora.</p>
-                {todoMundo}
-            </>
-        );
+        return <p className="resultado__recado">Não deu para carregar o seu progresso agora.</p>;
     }
-    const resultados = comOResultadoDeHoje(historico.dados, hoje);
+    return <NumerosDoProgresso resumo={resumirHistorico(comOResultadoDeHoje(historico.dados, hoje), hoje.dia)} />;
+}
+
+// O bonequinho da partida de hoje, do jeito que ficou: o mesmo desenho do jogo, menor, com a descrição em texto.
+function ComoFicouASuaForca({ erros }: { erros: number }) {
+    const idDoTitulo = useId();
     return (
-        <>
-            <NumerosDoProgresso resumo={resumirHistorico(resultados, hoje.dia)} />
-            <Abas
-                rotulo="Qual distribuição"
-                abas={[
-                    {
-                        id: "voce",
-                        rotulo: "Você",
-                        conteudo: <DistribuicaoDeErros titulo="Com quantos erros você acertou" linhas={distribuicaoDeErros(resultados, hoje)} />,
-                    },
-                    { id: "todo-mundo", rotulo: "Todo mundo hoje", conteudo: todoMundo },
-                ]}
-            />
-        </>
+        <section className="resultado__bloco resultado__forca" aria-labelledby={idDoTitulo}>
+            <h3 id={idDoTitulo} className="resultado__bloco-titulo">
+                Como ficou a sua forca
+            </h3>
+            <Forca erros={erros} />
+        </section>
     );
 }
 
@@ -394,7 +377,6 @@ function ResultadoDoDia({ rodada, dia, categoria, naConta, aoVirarODia }: PropsD
     const estatisticas = useBuscaQuandoPronto(salvou, () => buscarEstatisticasDoDia(dia));
     const historico = useBuscaQuandoPronto(salvou && !visitante, () => buscarHistorico());
     const hoje = resultadoDaRodada(rodada, dia, categoria);
-    const todoMundo = <ComoTodoMundoFoi estatisticas={estatisticas} rodada={rodada} jaContado={naConta === "salvo"} />;
 
     return (
         <>
@@ -402,15 +384,11 @@ function ResultadoDoDia({ rodada, dia, categoria, naConta, aoVirarODia }: PropsD
                 A palavra era <strong>{rodada.palavra}</strong>.
             </p>
             <AvisoDaConta situacao={naConta} />
-            {visitante && (
-                <>
-                    <ConviteParaCriarConta />
-                    <NumerosDeHoje rodada={rodada} />
-                    {todoMundo}
-                </>
-            )}
-            {!visitante && <NumerosDeHoje rodada={rodada} />}
-            {!visitante && salvou && <SeuProgresso historico={historico} hoje={hoje} todoMundo={todoMundo} />}
+            {visitante && <ConviteParaCriarConta />}
+            <NumerosDeHoje rodada={rodada} />
+            {!visitante && <SeuProgresso historico={historico} hoje={hoje} />}
+            <ComoFicouASuaForca erros={rodada.erros} />
+            <ComoTodoMundoFoi estatisticas={estatisticas} rodada={rodada} jaContado={naConta === "salvo"} />
             <div className="resultado__rodape">
                 <ProximaPalavra dia={dia} aoVirarODia={aoVirarODia} />
                 <BotaoCompartilhar texto={textoDoResultado(rodada, dia, categoria, `${window.location.origin}/jogo`)} />

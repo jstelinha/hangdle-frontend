@@ -170,3 +170,8 @@
         width: 100%;
     }
 }
+
+.resultado__forca .forca {
+    width: 120px;
+    margin-top: 12px;
+}
