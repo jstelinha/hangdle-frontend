@@ -221,8 +221,8 @@ function ConviteParaCriarConta() {
                 Veja o seu progresso
             </h3>
             <p>
-                Crie uma conta grátis para guardar suas partidas, ver a sua sequência de dias e com quantos erros você costuma acertar. A
-                partida de hoje já entra na conta.
+                Crie uma conta grátis para guardar suas partidas, ver a sua sequência de dias e saber se está melhorando. A partida de
+                hoje já entra na conta.
             </p>
             <div className="resultado__convite-acoes">
                 <Link to="/cadastro" className="botao">
