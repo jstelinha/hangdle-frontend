@@ -6,6 +6,7 @@ import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { GraficoTendencia } from "../componentes/graficos/GraficoTendencia";
 import { HistogramaDeLetras } from "../componentes/graficos/HistogramaDeLetras";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { colunasPorLetras, contagemDoHistorico } from "../jogo/histogramaDeLetras";
 import { resumirHistorico, type ResumoDoHistorico } from "../jogo/historico";
 import { diaNoFuso, formatarDia } from "../jogo/relogioDoDia";
@@ -99,6 +100,7 @@ function TabelaDePartidas({ resultados }: { resultados: ResultadoDiario[] }) {
 }
 
 export function EstatisticasPage() {
+    useTituloDaPagina("Suas estatísticas");
     const [carregamento, setCarregamento] = useState<Carregamento>({ situacao: "carregando" });
 
     useEffect(() => {

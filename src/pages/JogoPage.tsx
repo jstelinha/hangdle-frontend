@@ -15,6 +15,7 @@ import { Palavra } from "../componentes/Palavra";
 import { ProximaPalavra } from "../componentes/ProximaPalavra";
 import { Teclado } from "../componentes/Teclado";
 import { useFilaDeLetras } from "../hooks/useFilaDeLetras";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { guardarChutesDoDia, lerChutesDoDia } from "../jogo/chutesDoDia";
 import { compartilharTexto, textoDoResultado } from "../jogo/compartilhar";
 import { distribuicaoDeErros } from "../jogo/distribuicaoDeErros";
@@ -540,6 +541,7 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
 }
 
 export function JogoPage() {
+    useTituloDaPagina("Palavra do dia");
     const [carregamento, setCarregamento] = useState<Carregamento>({ situacao: "carregando" });
 
     useEffect(() => {

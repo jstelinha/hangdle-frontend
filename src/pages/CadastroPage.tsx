@@ -6,6 +6,7 @@ import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { CampoTexto } from "../componentes/CampoTexto";
 import { RequisitosSenha } from "../componentes/RequisitosSenha";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { lerVoltarPara } from "../sessao/voltarPara";
 import { formatarCpf } from "../validacao/cpf";
 import { errosDoFormulario, esquemaCadastro, type ErrosDoFormulario, type FormularioCadastro } from "../validacao/esquemas";
@@ -31,6 +32,7 @@ function focarPrimeiroComErro(erros: ErrosDoFormulario<FormularioCadastro>) {
 }
 
 export function CadastroPage() {
+    useTituloDaPagina("Criar conta");
     const navegar = useNavigate();
     // Quem veio de uma tela que pede conta (as salas) volta para ela depois do login.
     const voltarPara = lerVoltarPara(useLocation().state);
