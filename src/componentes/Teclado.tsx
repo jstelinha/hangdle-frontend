@@ -4,23 +4,29 @@ import "./Teclado.css";
 type Props = {
     certas: string[];
     erradas: string[];
+    // Letras já digitadas que ainda esperam a resposta do back.
+    pendentes?: string[];
     aoTeclar: (letra: string) => void;
 };
 
-type EstadoTecla = "livre" | "certa" | "errada";
+type EstadoTecla = "livre" | "enviando" | "certa" | "errada";
 
 const DESCRICAO: Record<EstadoTecla, string> = {
     livre: "",
+    enviando: ", enviando",
     certa: ", está na palavra",
     errada: ", não está na palavra",
 };
 
-export function Teclado({ certas, erradas, aoTeclar }: Props) {
+export function Teclado({ certas, erradas, pendentes = [], aoTeclar }: Props) {
     function estadoDa(letra: string): EstadoTecla {
         if (certas.includes(letra)) {
             return "certa";
         }
-        return erradas.includes(letra) ? "errada" : "livre";
+        if (erradas.includes(letra)) {
+            return "errada";
+        }
+        return pendentes.includes(letra) ? "enviando" : "livre";
     }
 
     return (
@@ -34,7 +40,9 @@ export function Teclado({ certas, erradas, aoTeclar }: Props) {
                                 key={letra}
                                 type="button"
                                 className={`tecla tecla--${estado}`}
-                                disabled={estado !== "livre"}
+                                // A tecla enviando continua focável: só fica marcada como indisponível.
+                                disabled={estado === "certa" || estado === "errada"}
+                                aria-disabled={estado === "enviando" || undefined}
                                 aria-label={`${letra}${DESCRICAO[estado]}`}
                                 onClick={() => aoTeclar(letra)}
                             >

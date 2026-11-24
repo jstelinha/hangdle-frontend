@@ -13,7 +13,7 @@ import { Placar } from "../componentes/Placar";
 import { Teclado } from "../componentes/Teclado";
 import { TopoDaPagina } from "../componentes/TopoDaPagina";
 import { useCarregamento } from "../hooks/useCarregamento";
-import { useFilaDeLetras } from "../hooks/useFilaDeLetras";
+import { recadoDasDevolvidas, recadoDoPedido, useFilaDeLetras } from "../hooks/useFilaDeLetras";
 import { useFormulario } from "../hooks/useFormulario";
 import { usePartida } from "../hooks/usePartida";
 import { casasDaForca, casasDaPalavra, separarLetras, totalDeLetras } from "../jogo/forcaDaSala";
@@ -163,15 +163,15 @@ function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca:
     const [aviso, setAviso] = useState("");
     const [falha, setFalha] = useState<string | null>(null);
     const { certas, erradas } = separarLetras(forca.casas, forca.letras);
-    const pedir = useFilaDeLetras(
+    const { pedir, pendentes, recadoDaFila } = useFilaDeLetras(
         async (letra) => {
             const estado = await aoChutar(letra);
             setFalha(null);
             return estado.vez?.minhaForca?.terminou ?? false;
         },
-        (erro) => {
+        (erro, devolvidas) => {
             setAviso("");
-            setFalha(traduzirErro(erro).mensagem);
+            setFalha(recadoDasDevolvidas(traduzirErro(erro).mensagem, devolvidas));
         },
     );
 
@@ -180,7 +180,7 @@ function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca:
         if (forca.terminou || !/^[A-Z]$/.test(letra)) {
             return;
         }
-        setAviso(pedir(letra, forca.letras) ? "" : `Você já tentou a letra ${letra}.`);
+        setAviso(recadoDoPedido(pedir(letra, forca.letras), `Você já tentou a letra ${letra}.`));
     }
 
     const aoPressionarTecla = useEffectEvent((evento: KeyboardEvent) => {
@@ -210,9 +210,9 @@ function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca:
             <Palavra casas={casasDaForca(forca.casas)} mostrarResposta={false} />
             <Aviso mensagem={falha} />
             <p className="jogo__aviso" role="status">
-                {aviso || recadoDaForca(forca)}
+                {recadoDaFila || aviso || recadoDaForca(forca)}
             </p>
-            {!forca.terminou && <Teclado certas={certas} erradas={erradas} aoTeclar={teclar} />}
+            {!forca.terminou && <Teclado certas={certas} erradas={erradas} pendentes={pendentes} aoTeclar={teclar} />}
         </section>
     );
 }

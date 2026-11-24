@@ -290,11 +290,17 @@ describe("página da partida", () => {
             await esperar(CONSULTA_LENTA);
             expect(screen.getByText("Ave")).toBeTruthy();
 
-            // A vai para o back; B e T esperam na fila. O segundo A é repetido e não entra.
+            // A vai para o back; B e T esperam na fila. O segundo A ainda está na fila e não entra de novo.
             digitarRapido("aba");
-            expect(screen.getByText("Você já tentou a letra A.")).toBeTruthy();
+            expect(screen.getByText("A letra A já está indo.")).toBeTruthy();
             digitarRapido("t");
             expect(letrasEnviadas()).toEqual(["A"]);
+            // Enquanto o back não responde, as teclas mostram que as letras foram e estão esperando.
+            for (const letra of ["A", "B", "T"]) {
+                const tecla = screen.getByRole("button", { name: `${letra}, enviando` });
+                expect(tecla.getAttribute("aria-disabled")).toBe("true");
+                expect(tecla.hasAttribute("disabled")).toBe(false);
+            }
 
             // Os três chutes levam 1,2 s. A consulta de 1 s depois da primeira começa durante o chute do T, antes de o
             // back conferir o T, e chega depois da resposta dele: com a partida velha, ela não pode apagar o T da tela.

@@ -5,7 +5,7 @@ import { api } from "../api/axios";
 import { SEM_RESPOSTA } from "../api/erros";
 import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
 import { Rodada } from "../jogo/Rodada";
-import { abrir, entrarComo, erroDaApi, erroDeRede, statusComTexto } from "../testes/ferramentas";
+import { abrir, entrarComo, erroDaApi, erroDeRede, recadosDeStatus, statusComTexto } from "../testes/ferramentas";
 import type { JogoDoDia } from "../types/jogo";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
@@ -263,7 +263,10 @@ describe("palavra do dia", () => {
         post.mockRejectedValueOnce(erroDeRede());
 
         await clicar("M");
-        expect(screen.getByRole("alert").textContent).toBe(SEM_RESPOSTA);
+        // Um recado só: o Aviso vermelho diz a falha e que a letra voltou; o aviso cinza do jogo não repete.
+        expect(screen.getByRole("alert").textContent).toBe(`${SEM_RESPOSTA} A letra M voltou para o teclado.`);
+        expect(recadosDeStatus().filter((recado) => recado.includes(SEM_RESPOSTA))).toEqual([]);
+        expect(screen.getByRole("button", { name: "M" })).toBeTruthy();
         await clicar("M");
         expect(screen.queryByRole("alert")).toBeNull();
 
