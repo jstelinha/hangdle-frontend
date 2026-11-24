@@ -8,7 +8,7 @@ import { CampoTexto } from "../componentes/CampoTexto";
 import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { levarPartidaParaConta } from "../sessao/levarPartidaParaConta";
 import { salvarSessao, sessaoVenceu } from "../sessao/sessao";
-import { lerVoltarPara, recadoDoLogin } from "../sessao/voltarPara";
+import { lerPedeConta, lerVoltarPara, recadoDoLogin } from "../sessao/voltarPara";
 import type { Sessao } from "../types/usuario";
 import { errosDoFormulario, esquemaLogin, type ErrosDoFormulario, type FormularioLogin } from "../validacao/esquemas";
 import "./Autenticacao.css";
@@ -19,15 +19,17 @@ type EstadoDoLogin = {
     cadastroFeito: boolean;
     email: string;
     voltarPara: string | null;
+    pedeConta: boolean;
 };
 
 function lerEstado(estado: unknown): EstadoDoLogin {
     const voltarPara = lerVoltarPara(estado);
+    const pedeConta = lerPedeConta(estado);
     if (typeof estado === "object" && estado !== null && "cadastroFeito" in estado && estado.cadastroFeito === true) {
         const email = "email" in estado && typeof estado.email === "string" ? estado.email : "";
-        return { cadastroFeito: true, email, voltarPara };
+        return { cadastroFeito: true, email, voltarPara, pedeConta };
     }
-    return { cadastroFeito: false, email: "", voltarPara };
+    return { cadastroFeito: false, email: "", voltarPara, pedeConta };
 }
 
 // O recado do topo, quando não há erro nem a conta acabou de ser criada: a sessão que venceu vem antes do motivo de
@@ -39,7 +41,7 @@ function motivoDoLogin(chegada: EstadoDoLogin, vencida: boolean, erroDaApi: stri
     if (vencida) {
         return SESSAO_VENCIDA;
     }
-    return chegada.voltarPara ? recadoDoLogin(chegada.voltarPara) : null;
+    return chegada.pedeConta && chegada.voltarPara ? recadoDoLogin(chegada.voltarPara) : null;
 }
 
 export function LoginPage() {

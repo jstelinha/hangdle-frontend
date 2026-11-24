@@ -111,6 +111,11 @@ export function EstatisticasPage() {
         };
     }, []);
 
+    function recarregar() {
+        setCarregamento({ situacao: "carregando" });
+        carregarHistorico().then(setCarregamento);
+    }
+
     return (
         <div className="pagina">
             <Cabecalho />
@@ -120,7 +125,14 @@ export function EstatisticasPage() {
 
                 {carregamento.situacao === "carregando" && <p role="status">Carregando o seu histórico...</p>}
 
-                {carregamento.situacao === "falhou" && <Aviso mensagem={carregamento.mensagem} />}
+                {carregamento.situacao === "falhou" && (
+                    <>
+                        <Aviso mensagem={carregamento.mensagem} />
+                        <button type="button" className="botao estatisticas__acao" onClick={recarregar}>
+                            Tentar de novo
+                        </button>
+                    </>
+                )}
 
                 {carregamento.situacao === "pronta" && carregamento.resultados.length === 0 && (
                     <p className="secao">

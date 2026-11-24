@@ -21,7 +21,12 @@
 /* Com espaço, Editar e Apagar ficam lado a lado: a célula tem width: 1% (o mínimo possível), e sem isto o flex-wrap
    do AcoesDaLinha empilhava os botões até em tela larga. */
 @media (min-width: 600px) {
-    .tabela-paginada .tabela__acoes .acoes {
+    .tabela-paginada .tabela__acoes .acoes:not(.acoes--confirmando) {
         flex-wrap: nowrap;
+    }
+
+    /* Na confirmação, a pergunta precisa de largura para quebrar em poucas linhas, com os botões lado a lado embaixo. */
+    .tabela-paginada .tabela__acoes .acoes--confirmando {
+        min-width: 14rem;
     }
 }

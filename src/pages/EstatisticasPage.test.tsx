@@ -1,8 +1,9 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { diaAnterior, diaNoFuso } from "../jogo/relogioDoDia";
-import { abrir, entrarComo, erroDaApi } from "../testes/ferramentas";
+import { abrir, entrarComo, erroDaApi, erroDeRede } from "../testes/ferramentas";
 import type { ResultadoDiario } from "../types/jogo";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
@@ -22,6 +23,18 @@ function valorDoResumo(rotulo: string): string {
 describe("página de estatísticas", () => {
     beforeEach(() => {
         get.mockReset();
+    });
+
+    it("se o histórico não carregar, deixa tentar de novo", async () => {
+        get.mockRejectedValueOnce(erroDeRede()).mockResolvedValue({ data: { resultados: [partida(HOJE, "MAÇÃ", true, 4)] } });
+        const usuario = userEvent.setup();
+        entrarComo("Larissa Souza");
+        abrir("/estatisticas");
+
+        await usuario.click(await screen.findByRole("button", { name: "Tentar de novo" }));
+
+        expect(await screen.findByText("MAÇÃ")).toBeTruthy();
+        expect(screen.queryByRole("button", { name: "Tentar de novo" })).toBeNull();
     });
 
     it("é só para quem entrou", () => {

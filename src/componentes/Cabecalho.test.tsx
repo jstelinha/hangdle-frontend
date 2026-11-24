@@ -90,6 +90,29 @@ describe("cabeçalho", () => {
         expect(await screen.findByRole("heading", { name: "Salas" })).toBeTruthy();
     });
 
+    it("o Entrar do cabeçalho volta para a tela onde a pessoa estava, sem recado de que ela foi barrada", async () => {
+        get.mockImplementation(async (url: string) => (url === "/palavra-do-dia" ? new Promise(() => undefined) : { data: { resultados: [] } }));
+        const usuario = userEvent.setup();
+        abrir("/jogo");
+
+        await usuario.click(cabecalho().getByRole("link", { name: "Entrar" }));
+        expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
+        expect(screen.queryByRole("status")).toBeNull();
+        await entrar(usuario);
+
+        expect(await screen.findByRole("heading", { name: "Palavra do dia" })).toBeTruthy();
+    });
+
+    it("no próprio login, o Entrar do cabeçalho não guarda o caminho de volta", async () => {
+        const usuario = userEvent.setup();
+        abrir("/login");
+
+        await usuario.click(cabecalho().getByRole("link", { name: "Entrar" }));
+        await entrar(usuario);
+
+        expect(await screen.findByRole("heading", { name: "Suas estatísticas" })).toBeTruthy();
+    });
+
     it("um link de sala aberto sem login volta para ele depois do login", async () => {
         const usuario = userEvent.setup();
         abrir("/salas?filtro=minhas");

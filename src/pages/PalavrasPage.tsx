@@ -9,6 +9,7 @@ import { TabelaPaginada, type Coluna } from "../componentes/TabelaPaginada";
 import { TopoDaPagina } from "../componentes/TopoDaPagina";
 import { useAvisoDaNavegacao } from "../hooks/useAvisoDaNavegacao";
 import { useCarregamento } from "../hooks/useCarregamento";
+import { useFocoNoAviso } from "../hooks/useFocoNoAviso";
 import { useListagem } from "../hooks/useListagem";
 import type { PalavraDaLista } from "../types/lista";
 import "./Palavras.css";
@@ -35,6 +36,7 @@ function LinhaDaPalavra({ palavra, aoApagar }: PropsDaLinha) {
                     nome={palavra.palavra}
                     editarEm={`/listas/${palavra.listaId}/palavras/${palavra.id}/editar`}
                     aoApagar={() => aoApagar(palavra)}
+                    pergunta={`Apagar ${palavra.palavra} da lista?`}
                 />
             </td>
         </tr>
@@ -48,8 +50,10 @@ export function PalavrasPage() {
     const { carregamento, recarregar } = useListagem(palavras.listar);
     const lista = useCarregamento(useCallback(() => listas.buscar(listaId), [listaId])).carregamento;
     const [aviso, setAviso] = useAvisoDaNavegacao();
+    const { refDoAviso, focarNoAviso } = useFocoNoAviso(aviso);
 
     async function apagar(palavra: PalavraDaLista) {
+        focarNoAviso();
         try {
             await palavras.apagar(palavra.id);
             setAviso({ tipo: "sucesso", mensagem: `A palavra ${palavra.palavra} foi apagada.` });
@@ -75,7 +79,7 @@ export function PalavrasPage() {
                     )}
                 </TopoDaPagina>
 
-                <Aviso mensagem={aviso?.mensagem ?? null} tipo={aviso?.tipo} />
+                <Aviso ref={refDoAviso} mensagem={aviso?.mensagem ?? null} tipo={aviso?.tipo} />
 
                 <TabelaPaginada
                     carregamento={carregamento}
