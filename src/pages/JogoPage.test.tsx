@@ -61,8 +61,18 @@ function tecla(letra: string): HTMLElement {
     return screen.getByRole("button", { name: letra });
 }
 
-function valorDoResumo(rotulo: string): string {
-    return screen.getByText(rotulo, { selector: "dt" }).nextElementSibling?.textContent ?? "";
+// A janela do resultado abre sozinha um instante depois do fim; o findByRole espera por ela.
+async function janelaDoResultado(titulo = "Você acertou!") {
+    return within(await screen.findByRole("dialog", { name: titulo }));
+}
+
+function numeroDoProgresso(janela: ReturnType<typeof within>, rotulo: string): string {
+    return janela.getByText(rotulo, { selector: "dt" }).nextElementSibling?.textContent ?? "";
+}
+
+async function verComoTodoMundoFoi() {
+    fireEvent.click(await screen.findByRole("tab", { name: "Todo mundo hoje" }));
+    return screen.findByRole("table", { name: "Como todo mundo foi hoje" });
 }
 
 function jaChutou(dia: string, chutes: string[]) {
@@ -144,7 +154,7 @@ describe("palavra do dia", () => {
             { token: '["Z","M","A"]', letra: "C" },
         ]);
         expect(palavrasAntesDoFim).toEqual([null, null, null]);
-        expect(screen.getByText(PALAVRA)).toBeTruthy();
+        expect(screen.getByRole("region", { name: /^(Você acertou a palavra do dia!|O boneco ficou completo\.)$/ }).textContent).toContain(`A palavra era ${PALAVRA}.`);
     });
 
     it("letra certa revela, errada desenha o boneco e repetida só avisa", async () => {
@@ -183,9 +193,37 @@ describe("palavra do dia", () => {
         await clicar("ZMAC");
 
         expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
-        expect(valorDoResumo("Letras chutadas")).toBe("4");
-        expect(valorDoResumo("Erros")).toBe("1");
         expect(screen.queryByRole("group", { name: "Teclado" })).toBeNull();
+        const janela = await janelaDoResultado();
+        expect(numeroDoProgresso(janela, "letras chutadas")).toBe("4");
+        expect(numeroDoProgresso(janela, "erro")).toBe("1");
+    });
+
+    it("a janela do resultado abre sozinha no fim, fecha e abre de novo pelo botão", async () => {
+        const usuario = userEvent.setup();
+        await abrirJogo();
+        await clicar("ZMAC");
+
+        const janela = await janelaDoResultado();
+        await usuario.click(janela.getByRole("button", { name: "Fechar" }));
+        expect(screen.queryByRole("dialog")).toBeNull();
+
+        await usuario.click(screen.getByRole("button", { name: "Ver resultado" }));
+        expect(screen.getByRole("dialog", { name: "Você acertou!" })).toBeTruthy();
+    });
+
+    it("compartilhar copia o resultado em quadrados, sem a palavra", async () => {
+        const usuario = userEvent.setup();
+        await abrirJogo();
+        await clicar("ZMAC");
+
+        const janela = await janelaDoResultado();
+        await usuario.click(janela.getByRole("button", { name: "Compartilhar" }));
+
+        const copiado = await navigator.clipboard.readText();
+        expect(copiado).toBe(["Hangdle 03/11/2026 · Comida", "🟥🟩🟩🟩", "Acertei com 1 erro.", `${window.location.origin}/jogo`].join("\n"));
+        expect(copiado).not.toContain(PALAVRA);
+        expect(janela.getByText("Resultado copiado. É só colar onde quiser.")).toBeTruthy();
     });
 
     it("no sexto erro o boneco fica completo e a palavra aparece", async () => {
@@ -195,7 +233,8 @@ describe("palavra do dia", () => {
 
         expect(screen.getByRole("heading", { name: "O boneco ficou completo." })).toBeTruthy();
         expect(screen.getByRole("img", { name: "Forca com o boneco completo" })).toBeTruthy();
-        expect(screen.getByText(PALAVRA)).toBeTruthy();
+        expect(screen.getByRole("region", { name: /^(Você acertou a palavra do dia!|O boneco ficou completo\.)$/ }).textContent).toContain(`A palavra era ${PALAVRA}.`);
+        expect(await janelaDoResultado("Não foi dessa vez")).toBeTruthy();
     });
 
     it("se o back não responder a letra, avisa e deixa digitar de novo", async () => {
@@ -242,8 +281,9 @@ describe("palavra do dia", () => {
         await abrirJogo();
 
         expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
-        expect(screen.getByRole("timer").textContent).toMatch(/^Próxima palavra em \d{2}:\d{2}:\d{2}$/);
         expect(screen.queryByRole("group", { name: "Teclado" })).toBeNull();
+        const janela = await janelaDoResultado();
+        expect(janela.getByRole("timer").textContent).toMatch(/^Próxima palavra em \d{2}:\d{2}:\d{2}$/);
     });
 
     it("chutes de outro dia não contam", async () => {
@@ -270,6 +310,8 @@ describe("palavra do dia", () => {
             ["Não acertou", "1"],
         ]);
         expect(get).toHaveBeenCalledWith("/palavra-do-dia/estatisticas", { params: { dia: DIA } });
+        expect(screen.queryByText("Ver os números em tabela")).toBeNull();
+        expect(screen.queryByText(/^Só entram as partidas/)).toBeNull();
     });
 
     it("quem está logado tem o resultado salvo na conta ao terminar", async () => {
@@ -280,8 +322,41 @@ describe("palavra do dia", () => {
 
         expect(await screen.findByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
         expect(post).toHaveBeenCalledWith("/resultados", { dia: DIA, letras: ["Z", "M", "A", "C"] });
-        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        const tabela = await verComoTodoMundoFoi();
         expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("2");
+    });
+
+    it("quem tem conta vê os seus números e com quantos erros acertou", async () => {
+        const anteriores = [
+            { ...MACA_DO_DIA, dia: "2026-11-02", letras: ["M", "B", "Z", "A", "C"], chutes: 5, erros: 2, acertou: true },
+            { ...MACA_DO_DIA, dia: "2026-11-01", letras: ["Z", "W", "Y", "K", "L", "B"], chutes: 6, erros: 6, acertou: false },
+        ];
+        get.mockImplementation(async (url: string, config?: { params?: unknown }) => {
+            if (url === "/resultados") {
+                const dia = (config?.params as { dia?: string } | undefined)?.dia;
+                return { data: { resultados: dia ? anteriores.filter((resultado) => resultado.dia === dia) : anteriores } };
+            }
+            return { data: SERVIDOR[url as keyof typeof SERVIDOR] };
+        });
+        entrarComo("Larissa Souza");
+        await abrirJogo();
+
+        await clicar("ZMAC");
+
+        const janela = await janelaDoResultado();
+        await janela.findByText("partidas", { selector: "dt" });
+        expect(numeroDoProgresso(janela, "partidas")).toBe("3");
+        expect(numeroDoProgresso(janela, "de acertos")).toMatch(/^67\s?%$/);
+        expect(numeroDoProgresso(janela, "sequência")).toBe("2");
+        expect(numeroDoProgresso(janela, "melhor sequência")).toBe("2");
+        expect(numeroDoProgresso(janela, "letras chutadas")).toBe("4");
+        expect(numeroDoProgresso(janela, "erro")).toBe("1");
+        const distribuicao = within(janela.getByRole("table", { name: "Com quantos erros você acertou" }));
+        const quantas = (linha: string) => distribuicao.getByRole("rowheader", { name: linha }).nextElementSibling?.textContent;
+        expect(quantas("0 erros")).toBe("0");
+        expect(quantas("1 erro (hoje)")).toBe("1");
+        expect(quantas("2 erros")).toBe("1");
+        expect(quantas("Boneco completo")).toBe("1");
     });
 
     it("resultado que já estava na conta conta como salvo", async () => {
@@ -306,7 +381,7 @@ describe("palavra do dia", () => {
         await abrirJogo();
 
         expect((await screen.findByRole("alert")).textContent).toContain("Não deu para salvar o resultado na sua conta agora.");
-        const tabela = await screen.findByRole("table", { name: "Como todo mundo foi hoje" });
+        const tabela = await verComoTodoMundoFoi();
         expect(within(tabela).getByText("4 letras (você)").nextElementSibling?.textContent).toBe("3");
     });
 
@@ -320,7 +395,7 @@ describe("palavra do dia", () => {
         await abrirJogo();
 
         expect(screen.getByRole("heading", { name: "Você acertou a palavra do dia!" })).toBeTruthy();
-        expect(screen.getByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
+        expect(await screen.findByText("Resultado salvo na sua conta.", { exact: false })).toBeTruthy();
         expect(get).toHaveBeenCalledWith("/resultados", { params: { dia: DIA } });
         expect(post).not.toHaveBeenCalled();
     });
@@ -354,7 +429,7 @@ describe("palavra do dia", () => {
 
         await abrirJogo();
 
-        const convite = within(screen.getByRole("complementary", { name: "Guarde seus resultados" }));
+        const convite = within(await screen.findByRole("complementary", { name: "Veja o seu progresso" }));
         expect(convite.getByRole("link", { name: "Criar conta" }).getAttribute("href")).toBe("/cadastro");
         expect(convite.getByRole("link", { name: "Entrar" }).getAttribute("href")).toBe("/login");
     });
@@ -365,7 +440,8 @@ describe("palavra do dia", () => {
 
         await abrirJogo();
 
-        expect(screen.queryByRole("complementary", { name: "Guarde seus resultados" })).toBeNull();
+        await janelaDoResultado();
+        expect(screen.queryByRole("complementary", { name: "Veja o seu progresso" })).toBeNull();
     });
 
     it("se as estatísticas falharem, o resultado continua na tela", async () => {

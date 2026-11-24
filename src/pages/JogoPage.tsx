@@ -1,11 +1,14 @@
 import axios from "axios";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { buscarEstatisticasDoDia, chutarNoDia, comecarJogoDoDia } from "../api/palavraDoDia";
 import { buscarHistorico, jaEstavaSalvo, salvarResultado } from "../api/resultados";
+import { Abas } from "../componentes/Abas";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
+import { Dialogo } from "../componentes/Dialogo";
+import { DistribuicaoDeErros } from "../componentes/DistribuicaoDeErros";
 import { Forca } from "../componentes/Forca";
 import { HistogramaDeLetras } from "../componentes/graficos/HistogramaDeLetras";
 import { Palavra } from "../componentes/Palavra";
@@ -13,8 +16,11 @@ import { ProximaPalavra } from "../componentes/ProximaPalavra";
 import { Teclado } from "../componentes/Teclado";
 import { useFilaDeLetras } from "../hooks/useFilaDeLetras";
 import { guardarChutesDoDia, lerChutesDoDia } from "../jogo/chutesDoDia";
+import { compartilharTexto, textoDoResultado } from "../jogo/compartilhar";
+import { distribuicaoDeErros } from "../jogo/distribuicaoDeErros";
 import { casasDaForca, separarLetras } from "../jogo/forcaDaSala";
 import { colunasPorLetras, somarResultado } from "../jogo/histogramaDeLetras";
+import { resumirHistorico, type ResumoDoHistorico } from "../jogo/historico";
 import { letraBase } from "../jogo/letras";
 import { ERROS_PARA_PERDER, Rodada } from "../jogo/Rodada";
 import { lerSessao } from "../sessao/sessao";
@@ -150,7 +156,7 @@ function useResultadoNaConta(dia: string, chutes: string[], salvoNaConta: boolea
 function AvisoDaConta({ situacao }: { situacao: SituacaoNaConta }) {
     if (situacao === "salvo") {
         return (
-            <p className="jogo__salvo" role="status">
+            <p className="resultado__salvo" role="status">
                 Resultado salvo na sua conta. <Link to="/estatisticas">Ver suas estatísticas</Link>
             </p>
         );
@@ -161,53 +167,66 @@ function AvisoDaConta({ situacao }: { situacao: SituacaoNaConta }) {
     return null;
 }
 
-type PropsComoTodoMundoFoi = {
-    dia: string;
-    rodada: Rodada;
-    jaContado: boolean;
-};
+type Busca<T> = { situacao: "carregando" } | { situacao: "falhou" } | { situacao: "pronta"; dados: T };
 
-function ComoTodoMundoFoi({ dia, rodada, jaContado }: PropsComoTodoMundoFoi) {
-    const [estatisticas, setEstatisticas] = useState<EstatisticasDoDia | null>(null);
-    const [falhou, setFalhou] = useState(false);
+// Busca quando "pronto" vira true, e só uma vez. Espera o resultado ser salvo, para ele já entrar no que o back devolve.
+function useBuscaQuandoPronto<T>(pronto: boolean, buscar: () => Promise<T>): Busca<T> {
+    const [busca, setBusca] = useState<Busca<T>>({ situacao: "carregando" });
+    const buscarAgora = useEffectEvent(buscar);
 
     useEffect(() => {
+        if (!pronto) {
+            return;
+        }
         let ativo = true;
-        buscarEstatisticasDoDia(dia).then(
-            (dados) => ativo && setEstatisticas(dados),
-            () => ativo && setFalhou(true),
+        buscarAgora().then(
+            (dados) => ativo && setBusca({ situacao: "pronta", dados }),
+            () => ativo && setBusca({ situacao: "falhou" }),
         );
         return () => {
             ativo = false;
         };
-    }, [dia]);
+    }, [pronto]);
 
-    if (falhou) {
-        return <p className="jogo__aviso">Não deu para carregar como todo mundo foi hoje.</p>;
+    return busca;
+}
+
+type PropsComoTodoMundoFoi = {
+    estatisticas: Busca<EstatisticasDoDia>;
+    rodada: Rodada;
+    jaContado: boolean;
+};
+
+function ComoTodoMundoFoi({ estatisticas, rodada, jaContado }: PropsComoTodoMundoFoi) {
+    if (estatisticas.situacao === "falhou") {
+        return <p className="resultado__recado">Não deu para carregar como todo mundo foi hoje.</p>;
     }
-    if (!estatisticas) {
-        return null;
+    if (estatisticas.situacao === "carregando") {
+        return <p className="resultado__recado">Carregando como todo mundo foi hoje...</p>;
     }
     const seu = { acertou: rodada.estado === "acertou", chutes: rodada.chutes.length };
     return (
         <HistogramaDeLetras
             titulo="Como todo mundo foi hoje"
             subtitulo="Quantas pessoas acertaram com cada número de letras chutadas."
-            nota={jaContado ? "Só entram as partidas de quem tem conta." : "Só entram as partidas de quem tem conta, mais a sua."}
             unidade="jogadores"
-            colunas={colunasPorLetras(jaContado ? estatisticas : somarResultado(estatisticas, seu), seu)}
+            colunas={colunasPorLetras(jaContado ? estatisticas.dados : somarResultado(estatisticas.dados, seu), seu)}
+            tabelaSoParaLeitor
         />
     );
 }
 
 function ConviteParaCriarConta() {
     return (
-        <aside className="jogo__convite" aria-labelledby="titulo-convite">
-            <h3 id="titulo-convite" className="jogo__convite-titulo">
-                Guarde seus resultados
+        <aside className="resultado__convite" aria-labelledby="titulo-convite">
+            <h3 id="titulo-convite" className="resultado__convite-titulo">
+                Veja o seu progresso
             </h3>
-            <p>Crie uma conta grátis para guardar suas partidas, ver a sua sequência de dias e saber se está melhorando.</p>
-            <div className="jogo__convite-acoes">
+            <p>
+                Crie uma conta grátis para guardar suas partidas, ver a sua sequência de dias e com quantos erros você costuma acertar. A
+                partida de hoje já entra na conta.
+            </p>
+            <div className="resultado__convite-acoes">
                 <Link to="/cadastro" className="botao">
                     Criar conta
                 </Link>
@@ -219,40 +238,225 @@ function ConviteParaCriarConta() {
     );
 }
 
+const porcentagem = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 0 });
+
+type Numero = {
+    rotulo: string;
+    valor: string;
+};
+
+// Uma fileira de números grandes com o nome embaixo, com um título pequeno em cima.
+function Numeros({ titulo, numeros }: { titulo: string; numeros: Numero[] }) {
+    const idDoTitulo = useId();
+    return (
+        <section className="resultado__bloco" aria-labelledby={idDoTitulo}>
+            <h3 id={idDoTitulo} className="resultado__bloco-titulo">
+                {titulo}
+            </h3>
+            <dl className="resultado__numeros" style={{ "--colunas": numeros.length } as CSSProperties}>
+                {numeros.map((numero) => (
+                    <div key={numero.rotulo}>
+                        <dt>{numero.rotulo}</dt>
+                        <dd>{numero.valor}</dd>
+                    </div>
+                ))}
+            </dl>
+        </section>
+    );
+}
+
+function NumerosDeHoje({ rodada }: { rodada: Rodada }) {
+    return (
+        <Numeros
+            titulo="Hoje"
+            numeros={[
+                { rotulo: "letras chutadas", valor: String(rodada.chutes.length) },
+                { rotulo: rodada.erros === 1 ? "erro" : "erros", valor: String(rodada.erros) },
+            ]}
+        />
+    );
+}
+
+function NumerosDoProgresso({ resumo }: { resumo: ResumoDoHistorico }) {
+    return (
+        <Numeros
+            titulo="Seu progresso"
+            numeros={[
+                { rotulo: "partidas", valor: String(resumo.partidas) },
+                { rotulo: "de acertos", valor: porcentagem.format(resumo.taxaDeAcerto) },
+                { rotulo: "sequência", valor: String(resumo.sequenciaAtual) },
+                { rotulo: "melhor sequência", valor: String(resumo.melhorSequencia) },
+            ]}
+        />
+    );
+}
+
+// O de hoje pode não estar no histórico do back (não deu para salvar). Aí ele entra daqui, para os números já contarem.
+function comOResultadoDeHoje(resultados: ResultadoDiario[], hoje: ResultadoDiario): ResultadoDiario[] {
+    return resultados.some((resultado) => resultado.dia === hoje.dia) ? resultados : [...resultados, hoje];
+}
+
+function resultadoDaRodada(rodada: Rodada, dia: string, categoria: string): ResultadoDiario {
+    return {
+        dia,
+        categoria,
+        palavra: rodada.palavra,
+        letras: rodada.chutes,
+        chutes: rodada.chutes.length,
+        erros: rodada.erros,
+        acertou: rodada.estado === "acertou",
+    };
+}
+
+type PropsDoProgresso = {
+    historico: Busca<ResultadoDiario[]>;
+    hoje: ResultadoDiario;
+    todoMundo: ReactNode;
+};
+
+function SeuProgresso({ historico, hoje, todoMundo }: PropsDoProgresso) {
+    if (historico.situacao === "carregando") {
+        return <p className="resultado__recado">Carregando o seu progresso...</p>;
+    }
+    if (historico.situacao === "falhou") {
+        return (
+            <>
+                <p className="resultado__recado">Não deu para carregar o seu progresso agora.</p>
+                {todoMundo}
+            </>
+        );
+    }
+    const resultados = comOResultadoDeHoje(historico.dados, hoje);
+    return (
+        <>
+            <NumerosDoProgresso resumo={resumirHistorico(resultados, hoje.dia)} />
+            <Abas
+                rotulo="Qual distribuição"
+                abas={[
+                    {
+                        id: "voce",
+                        rotulo: "Você",
+                        conteudo: <DistribuicaoDeErros titulo="Com quantos erros você acertou" linhas={distribuicaoDeErros(resultados, hoje)} />,
+                    },
+                    { id: "todo-mundo", rotulo: "Todo mundo hoje", conteudo: todoMundo },
+                ]}
+            />
+        </>
+    );
+}
+
+function BotaoCompartilhar({ texto }: { texto: string }) {
+    const [recado, setRecado] = useState("");
+
+    async function compartilhar() {
+        const como = await compartilharTexto(texto);
+        if (como === "copiou") {
+            setRecado("Resultado copiado. É só colar onde quiser.");
+        } else if (como === "falhou") {
+            setRecado("Não deu para copiar o resultado. Tente de novo.");
+        } else {
+            setRecado("");
+        }
+    }
+
+    return (
+        <div className="resultado__compartilhar">
+            <button type="button" className="botao" onClick={compartilhar}>
+                Compartilhar
+                <svg className="resultado__icone" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" />
+                </svg>
+            </button>
+            <p className="resultado__copiado" role="status">
+                {recado}
+            </p>
+        </div>
+    );
+}
+
+type PropsDoResultado = {
+    rodada: Rodada;
+    dia: string;
+    categoria: string;
+    naConta: SituacaoNaConta;
+    aoVirarODia: () => void;
+};
+
+// A janela do fim: os números de quem tem conta (ou o convite, para quem não tem), as distribuições, o relógio da
+// próxima palavra e o botão de compartilhar.
+function ResultadoDoDia({ rodada, dia, categoria, naConta, aoVirarODia }: PropsDoResultado) {
+    const visitante = naConta === "visitante";
+    const salvou = naConta !== "salvando";
+    const estatisticas = useBuscaQuandoPronto(salvou, () => buscarEstatisticasDoDia(dia));
+    const historico = useBuscaQuandoPronto(salvou && !visitante, () => buscarHistorico());
+    const hoje = resultadoDaRodada(rodada, dia, categoria);
+    const todoMundo = <ComoTodoMundoFoi estatisticas={estatisticas} rodada={rodada} jaContado={naConta === "salvo"} />;
+
+    return (
+        <>
+            <p className="resultado__palavra">
+                A palavra era <strong>{rodada.palavra}</strong>.
+            </p>
+            <AvisoDaConta situacao={naConta} />
+            {visitante && (
+                <>
+                    <ConviteParaCriarConta />
+                    <NumerosDeHoje rodada={rodada} />
+                    {todoMundo}
+                </>
+            )}
+            {!visitante && <NumerosDeHoje rodada={rodada} />}
+            {!visitante && salvou && <SeuProgresso historico={historico} hoje={hoje} todoMundo={todoMundo} />}
+            <div className="resultado__rodape">
+                <ProximaPalavra dia={dia} aoVirarODia={aoVirarODia} />
+                <BotaoCompartilhar texto={textoDoResultado(rodada, dia, categoria, `${window.location.origin}/jogo`)} />
+            </div>
+        </>
+    );
+}
+
+// O tempo para a palavra se completar na tela antes de a janela do resultado cobrir tudo.
+const ESPERA_PARA_MOSTRAR_O_RESULTADO = 600;
+
 type PropsFim = {
     rodada: Rodada;
     dia: string;
+    categoria: string;
     salvoNaConta: boolean;
     aoVirarODia: () => void;
 };
 
-function FimDoDia({ rodada, dia, salvoNaConta, aoVirarODia }: PropsFim) {
+function FimDoDia({ rodada, dia, categoria, salvoNaConta, aoVirarODia }: PropsFim) {
     const titulo = useFocoAoAparecer<HTMLHeadingElement>();
     const naConta = useResultadoNaConta(dia, rodada.chutes, salvoNaConta);
+    const [aberto, setAberto] = useState(false);
+    const acertou = rodada.estado === "acertou";
+
+    useEffect(() => {
+        const espera = window.setTimeout(() => setAberto(true), ESPERA_PARA_MOSTRAR_O_RESULTADO);
+        return () => window.clearTimeout(espera);
+    }, []);
 
     return (
-        <section className="secao" aria-labelledby="titulo-fim-do-dia">
-            <h2 id="titulo-fim-do-dia" className="secao__titulo" tabIndex={-1} ref={titulo}>
-                {rodada.estado === "acertou" ? "Você acertou a palavra do dia!" : "O boneco ficou completo."}
-            </h2>
-            <p className="subtitulo">
-                A palavra era <strong>{rodada.palavra}</strong>.
-            </p>
-            <dl className="jogo__resumo">
-                <div>
-                    <dt>Letras chutadas</dt>
-                    <dd>{rodada.chutes.length}</dd>
-                </div>
-                <div>
-                    <dt>Erros</dt>
-                    <dd>{rodada.erros}</dd>
-                </div>
-            </dl>
-            <AvisoDaConta situacao={naConta} />
-            {naConta !== "salvando" && <ComoTodoMundoFoi dia={dia} rodada={rodada} jaContado={naConta === "salvo"} />}
-            {naConta === "visitante" && <ConviteParaCriarConta />}
-            <ProximaPalavra dia={dia} aoVirarODia={aoVirarODia} />
-        </section>
+        <>
+            <section className="secao" aria-labelledby="titulo-fim-do-dia">
+                <h2 id="titulo-fim-do-dia" className="secao__titulo" tabIndex={-1} ref={titulo}>
+                    {acertou ? "Você acertou a palavra do dia!" : "O boneco ficou completo."}
+                </h2>
+                <p className="subtitulo">
+                    A palavra era <strong>{rodada.palavra}</strong>.
+                </p>
+                <button type="button" className="botao jogo__acao" aria-haspopup="dialog" onClick={() => setAberto(true)}>
+                    Ver resultado
+                </button>
+            </section>
+            <Dialogo aberto={aberto} titulo={acertou ? "Você acertou!" : "Não foi dessa vez"} aoFechar={() => setAberto(false)}>
+                <ResultadoDoDia rodada={rodada} dia={dia} categoria={categoria} naConta={naConta} aoVirarODia={aoVirarODia} />
+            </Dialogo>
+        </>
     );
 }
 
@@ -313,7 +517,7 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
                 {aviso}
             </p>
             {fim ? (
-                <FimDoDia rodada={fim} dia={jogo.dia} salvoNaConta={salvoNaConta} aoVirarODia={aoVirarODia} />
+                <FimDoDia rodada={fim} dia={jogo.dia} categoria={jogo.categoria} salvoNaConta={salvoNaConta} aoVirarODia={aoVirarODia} />
             ) : (
                 <Teclado certas={certas} erradas={erradas} aoTeclar={teclar} />
             )}

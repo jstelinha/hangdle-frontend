@@ -37,10 +37,11 @@ type Props = {
     nota?: string;
     unidade: Unidade;
     colunas: ColunaDeLetras[];
+    tabelaSoParaLeitor?: boolean;
 };
 
 // Rubrica de Probabilidade e Estatística - Análise Descritiva - Utilizar gráficos adequados aos objetivos de negócio (histogramas, dispersão, barras e colunas, séries temporais, regressão)
-export function HistogramaDeLetras({ titulo, subtitulo, nota, unidade, colunas }: Props) {
+export function HistogramaDeLetras({ titulo, subtitulo, nota, unidade, colunas, tabelaSoParaLeitor = false }: Props) {
     const temDestaque = colunas.some((coluna) => coluna.destaque);
 
     return (
@@ -84,6 +85,7 @@ export function HistogramaDeLetras({ titulo, subtitulo, nota, unidade, colunas }
                     { titulo: unidade === "jogadores" ? "Jogadores" : "Partidas", valor: (coluna) => coluna.quantidade, numerica: true },
                 ]}
                 linhas={colunas}
+                soParaLeitor={tabelaSoParaLeitor}
             />
         </figure>
     );
