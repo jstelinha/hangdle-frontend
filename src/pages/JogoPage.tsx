@@ -468,6 +468,19 @@ type PropsDoJogo = {
 
 // A partida do dia na tela. A palavra fica no back: cada letra vai para lá pela fila (useFilaDeLetras), com o token
 // da resposta anterior, e volta com as casas abertas. A palavra só chega no fim.
+// O que a letra fez, para o aviso do jogo (role="status", sempre montado): quem não vê a forca e as casas ouve se a
+// letra estava na palavra. No fim, quem fala é o título do fim, que recebe o foco.
+function recadoDaLetra(letra: string, jogo: JogoDoDia): string {
+    if (jogo.terminou) {
+        return "";
+    }
+    const casas = jogo.casas.filter((casa) => casa !== null && letraBase(casa) === letra).length;
+    if (casas > 0) {
+        return casas === 1 ? `${letra} está na palavra.` : `${letra} está na palavra (${casas} casas).`;
+    }
+    return `${letra} não está na palavra. ${jogo.erros} de ${ERROS_PARA_PERDER} erros.`;
+}
+
 function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
     const [jogo, setJogo] = useState(inicial);
     const [aviso, setAviso] = useState("");
@@ -479,6 +492,7 @@ function JogoDoDiaNaTela({ inicial, salvoNaConta, aoVirarODia }: PropsDoJogo) {
             token.current = novo.token;
             guardarChutesDoDia(novo.dia, novo.letras);
             setJogo(novo);
+            setAviso(recadoDaLetra(letra, novo));
             return novo.terminou;
         },
         (falha) => setAviso(traduzirErro(falha).mensagem),

@@ -198,6 +198,37 @@ describe("página da partida", () => {
         expect(await screen.findByText("Você escolheu a palavra. Agora é acompanhar os outros.")).toBeTruthy();
     });
 
+    it("quando a fase muda, anuncia o recado e leva o foco que se perdeu para o título da seção nova", async () => {
+        responder(estado({ vez: vez({ opcoes: [{ id: 12, palavra: "SAPO", dica: null }] }) }));
+        depoisDeAgir(estado({ vez: vez({ fase: "adivinhando", palavra: "SAPO", opcoes: null }) }));
+        const usuario = userEvent.setup();
+        abrirPartida();
+        await screen.findByRole("heading", { name: "Sua vez de escolher a palavra" });
+        const regiaoViva = document.querySelector("main [aria-live='polite']");
+        expect(regiaoViva?.textContent).toBe("");
+
+        // O botão da palavra some com a seção da escolha, e o foco ia ficar perdido.
+        await usuario.click(screen.getByRole("button", { name: "SAPO" }));
+
+        const titulo = await screen.findByRole("heading", { name: "Sua palavra" });
+        expect(regiaoViva?.textContent).toBe("Os outros estão adivinhando a sua palavra.");
+        expect(document.activeElement).toBe(titulo);
+    });
+
+    it("quando a fase muda pela consulta, não tira o foco de quem está em outro lugar", async () => {
+        responder(estado({ eu: 2, vez: vez() }));
+        abrirPartida();
+        await screen.findByRole("heading", { name: "Larissa está escolhendo a palavra" });
+        const voltar = screen.getByRole("link", { name: "Voltar para a sala" });
+        voltar.focus();
+
+        partida = ADIVINHANDO_BRU;
+
+        expect(await screen.findByRole("heading", { name: "Adivinhe a palavra" }, { timeout: 2500 })).toBeTruthy();
+        expect(document.querySelector("main [aria-live='polite']")?.textContent).toBe("Hora de adivinhar: 5 letras.");
+        expect(document.activeElement).toBe(voltar);
+    });
+
     it("sem lista, digita a palavra, e o formulário confere antes de enviar", async () => {
         responder(estado({ vez: vez() }));
         depoisDeAgir(estado({ vez: vez({ fase: "adivinhando", palavra: "ARARA", opcoes: null }) }));

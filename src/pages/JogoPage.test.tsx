@@ -164,6 +164,20 @@ describe("palavra do dia", () => {
         expect(screen.getByRole("region", { name: /^(Você acertou a palavra do dia!|O boneco ficou completo\.)$/ }).textContent).toContain(`A palavra era ${PALAVRA}.`);
     });
 
+    it("cada letra diz, no aviso que o leitor de tela lê, se estava na palavra", async () => {
+        await abrirJogo();
+        const aviso = screen.getByRole("status");
+
+        await clicar("M");
+        expect(aviso.textContent).toBe("M está na palavra.");
+
+        await clicar("A");
+        expect(aviso.textContent).toBe("A está na palavra (2 casas).");
+
+        await clicar("Z");
+        expect(aviso.textContent).toBe("Z não está na palavra. 1 de 6 erros.");
+    });
+
     it("letra certa revela, errada desenha o boneco e repetida só avisa", async () => {
         const usuario = userEvent.setup();
         await abrirJogo();

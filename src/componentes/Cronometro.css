@@ -16,3 +16,8 @@
 .cronometro--acabando .cronometro__tempo {
     color: var(--perigo);
 }
+
+.cronometro__alerta {
+    color: var(--perigo);
+    font-weight: 700;
+}
