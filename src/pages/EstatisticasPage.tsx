@@ -6,6 +6,7 @@ import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { GraficoTendencia } from "../componentes/graficos/GraficoTendencia";
 import { HistogramaDeLetras } from "../componentes/graficos/HistogramaDeLetras";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { colunasPorLetras, contagemDoHistorico } from "../jogo/histogramaDeLetras";
 import { resumirHistorico, type ResumoDoHistorico } from "../jogo/historico";
 import { diaNoFuso, formatarDia } from "../jogo/relogioDoDia";
@@ -35,7 +36,7 @@ function Resumo({ resumo }: { resumo: ResumoDoHistorico }) {
         { rotulo: "Acertos", valor: porcentagem.format(resumo.taxaDeAcerto) },
         { rotulo: "Sequência atual", valor: String(resumo.sequenciaAtual) },
         { rotulo: "Melhor sequência", valor: String(resumo.melhorSequencia) },
-        { rotulo: "Média de letras", valor: resumo.mediaDeLetras === null ? "—" : decimal.format(resumo.mediaDeLetras) },
+        { rotulo: "Média de letras chutadas", valor: resumo.mediaDeLetras === null ? "—" : decimal.format(resumo.mediaDeLetras) },
     ];
     return (
         <dl className="estatisticas__resumo">
@@ -76,7 +77,7 @@ function TabelaDePartidas({ resultados }: { resultados: ResultadoDiario[] }) {
                     <th scope="col">Palavra</th>
                     <th scope="col">Resultado</th>
                     <th scope="col" className="numero">
-                        Letras
+                        Letras chutadas
                     </th>
                     <th scope="col" className="numero">
                         Erros
@@ -99,6 +100,7 @@ function TabelaDePartidas({ resultados }: { resultados: ResultadoDiario[] }) {
 }
 
 export function EstatisticasPage() {
+    useTituloDaPagina("Suas estatísticas");
     const [carregamento, setCarregamento] = useState<Carregamento>({ situacao: "carregando" });
 
     useEffect(() => {
@@ -109,6 +111,11 @@ export function EstatisticasPage() {
         };
     }, []);
 
+    function recarregar() {
+        setCarregamento({ situacao: "carregando" });
+        carregarHistorico().then(setCarregamento);
+    }
+
     return (
         <div className="pagina">
             <Cabecalho />
@@ -118,7 +125,14 @@ export function EstatisticasPage() {
 
                 {carregamento.situacao === "carregando" && <p role="status">Carregando o seu histórico...</p>}
 
-                {carregamento.situacao === "falhou" && <Aviso mensagem={carregamento.mensagem} />}
+                {carregamento.situacao === "falhou" && (
+                    <>
+                        <Aviso mensagem={carregamento.mensagem} />
+                        <button type="button" className="botao estatisticas__acao" onClick={recarregar}>
+                            Tentar de novo
+                        </button>
+                    </>
+                )}
 
                 {carregamento.situacao === "pronta" && carregamento.resultados.length === 0 && (
                     <p className="secao">

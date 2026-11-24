@@ -5,32 +5,51 @@ import { traduzirErro } from "../api/erros";
 import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { CampoTexto } from "../componentes/CampoTexto";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { levarPartidaParaConta } from "../sessao/levarPartidaParaConta";
-import { salvarSessao } from "../sessao/sessao";
-import { lerVoltarPara, recadoDoLogin } from "../sessao/voltarPara";
+import { salvarSessao, sessaoVenceu } from "../sessao/sessao";
+import { lerPedeConta, lerVoltarPara, recadoDoLogin } from "../sessao/voltarPara";
 import type { Sessao } from "../types/usuario";
 import { errosDoFormulario, esquemaLogin, type ErrosDoFormulario, type FormularioLogin } from "../validacao/esquemas";
 import "./Autenticacao.css";
+
+const SESSAO_VENCIDA = "Sua sessão expirou. Entre de novo para continuar.";
 
 type EstadoDoLogin = {
     cadastroFeito: boolean;
     email: string;
     voltarPara: string | null;
+    pedeConta: boolean;
 };
 
 function lerEstado(estado: unknown): EstadoDoLogin {
     const voltarPara = lerVoltarPara(estado);
+    const pedeConta = lerPedeConta(estado);
     if (typeof estado === "object" && estado !== null && "cadastroFeito" in estado && estado.cadastroFeito === true) {
         const email = "email" in estado && typeof estado.email === "string" ? estado.email : "";
-        return { cadastroFeito: true, email, voltarPara };
+        return { cadastroFeito: true, email, voltarPara, pedeConta };
     }
-    return { cadastroFeito: false, email: "", voltarPara };
+    return { cadastroFeito: false, email: "", voltarPara, pedeConta };
+}
+
+// O recado do topo, quando não há erro nem a conta acabou de ser criada: a sessão que venceu vem antes do motivo de
+// quem chegou de uma tela que pede conta.
+function motivoDoLogin(chegada: EstadoDoLogin, vencida: boolean, erroDaApi: string | null): string | null {
+    if (erroDaApi !== null || chegada.cadastroFeito) {
+        return null;
+    }
+    if (vencida) {
+        return SESSAO_VENCIDA;
+    }
+    return chegada.pedeConta && chegada.voltarPara ? recadoDoLogin(chegada.voltarPara) : null;
 }
 
 export function LoginPage() {
+    useTituloDaPagina("Entrar");
     const navegar = useNavigate();
     const local = useLocation();
     const [chegada] = useState(() => lerEstado(local.state));
+    const [vencida] = useState(sessaoVenceu);
     const [form, setForm] = useState<FormularioLogin>({ email: chegada.email, senha: "" });
     const [erros, setErros] = useState<ErrosDoFormulario<FormularioLogin>>({});
     const [tentouEnviar, setTentouEnviar] = useState(false);
@@ -75,7 +94,7 @@ export function LoginPage() {
     }
 
     const mostrarSucesso = chegada.cadastroFeito && erroDaApi === null;
-    const motivo = chegada.voltarPara && !chegada.cadastroFeito && erroDaApi === null ? recadoDoLogin(chegada.voltarPara) : null;
+    const motivo = motivoDoLogin(chegada, vencida, erroDaApi);
 
     return (
         <div className="pagina">
@@ -111,7 +130,7 @@ export function LoginPage() {
                         autoComplete="current-password"
                     />
 
-                    <button type="submit" className="botao botao--largo autenticacao__enviar" disabled={enviando}>
+                    <button type="submit" className="botao botao--largo autenticacao__enviar" disabled={enviando} aria-busy={enviando}>
                         {enviando ? "Entrando..." : "Entrar"}
                     </button>
                 </form>

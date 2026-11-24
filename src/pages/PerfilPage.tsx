@@ -5,6 +5,7 @@ import { Aviso } from "../componentes/Aviso";
 import { Cabecalho } from "../componentes/Cabecalho";
 import { CampoTexto } from "../componentes/CampoTexto";
 import { RequisitosSenha } from "../componentes/RequisitosSenha";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import { useSessao } from "../sessao/contexto";
 import { atualizarUsuarioDaSessao } from "../sessao/sessao";
 import { formatarCpf } from "../validacao/cpf";
@@ -25,6 +26,7 @@ function focarPrimeiroComErro(erros: ErrosDoFormulario<FormularioEdicao>) {
 }
 
 export function PerfilPage() {
+    useTituloDaPagina("Seu perfil");
     const id = useSessao()?.usuario.id;
     const [email, setEmail] = useState<string | null>(null);
     const [form, setForm] = useState<FormularioEdicao>(VAZIO);
@@ -144,7 +146,7 @@ export function PerfilPage() {
                             autoComplete="new-password"
                         />
 
-                        <button type="submit" className="botao botao--largo autenticacao__enviar" disabled={enviando}>
+                        <button type="submit" className="botao botao--largo autenticacao__enviar" disabled={enviando} aria-busy={enviando}>
                             {enviando ? "Salvando..." : "Salvar"}
                         </button>
                     </form>

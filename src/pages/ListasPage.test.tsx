@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { SEM_RESPOSTA } from "../api/erros";
-import { abrir, entrarComo, erroDaApi, erroDeRede } from "../testes/ferramentas";
+import { abrir, entrarComo, erroDaApi, erroDeRede, esperarStatusComTexto } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 const get = vi.mocked(api.get);
@@ -84,12 +84,25 @@ describe("listagem das listas", () => {
 
         await usuario.click(screen.getByRole("button", { name: "Apagar Animais" }));
         expect(apagar).not.toHaveBeenCalled();
+        expect(screen.getByRole("group", { name: "Apagar Animais e as 12 palavras dela?" })).toBeTruthy();
         await usuario.click(screen.getByRole("button", { name: "Sim, apagar" }));
 
         expect(apagar).toHaveBeenCalledWith("/listas/3");
-        expect((await screen.findByRole("status")).textContent).toBe("A lista Animais foi apagada, com as palavras dela.");
+        const aviso = await esperarStatusComTexto();
+        expect(aviso.textContent).toBe("A lista Animais foi apagada, com as palavras dela.");
+        // A linha sumiu com o foco dentro: ele vai para o aviso, e não para o body.
+        expect(document.activeElement).toBe(aviso);
         expect(await screen.findByText("1 lista")).toBeTruthy();
         expect(screen.queryByRole("link", { name: "Animais" })).toBeNull();
+    });
+
+    it("a pergunta de apagar diz quantas palavras vão junto", async () => {
+        const usuario = userEvent.setup();
+        await abrirListas();
+
+        await usuario.click(screen.getByRole("button", { name: "Apagar Frutas" }));
+
+        expect(screen.getByText("Apagar Frutas?")).toBeTruthy();
     });
 
     it("avisa quando não deu para apagar", async () => {
@@ -100,7 +113,9 @@ describe("listagem das listas", () => {
         await usuario.click(screen.getByRole("button", { name: "Apagar Animais" }));
         await usuario.click(screen.getByRole("button", { name: "Sim, apagar" }));
 
-        expect((await screen.findByRole("alert")).textContent).toBe("Lista não encontrada.");
+        const aviso = await screen.findByRole("alert");
+        expect(aviso.textContent).toBe("Lista não encontrada.");
+        expect(document.activeElement).toBe(aviso);
         expect(screen.getByRole("link", { name: "Animais" })).toBeTruthy();
     });
 

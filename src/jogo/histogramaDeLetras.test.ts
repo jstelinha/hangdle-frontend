@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ResultadoDiario } from "../types/jogo";
-import { colunasPorLetras, contagemDoHistorico, somarResultado } from "./histogramaDeLetras";
+import { colunasPorLetras, contagemDoHistorico, rotuloComVoce, somarResultado } from "./histogramaDeLetras";
 
 const DIA = {
     naoAcertaram: 1,
@@ -73,5 +73,10 @@ describe("histograma de letras", () => {
             ],
             naoAcertaram: 1,
         });
+    });
+
+    it("a coluna de quem jogou leva o (você) no rótulo, para não depender só da cor", () => {
+        expect(rotuloComVoce({ rotulo: "7 letras", quantidade: 2, destaque: true })).toBe("7 letras (você)");
+        expect(rotuloComVoce({ rotulo: "8 letras", quantidade: 1, destaque: false })).toBe("8 letras");
     });
 });

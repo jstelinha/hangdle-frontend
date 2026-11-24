@@ -33,6 +33,32 @@ describe("ações da linha", () => {
         expect(aoApagar).toHaveBeenCalledOnce();
     });
 
+    it("a pergunta pode dizer o que se perde, e depois do sim o foco não volta para o botão de apagar", async () => {
+        const aoApagar = vi.fn(() => Promise.resolve());
+        const usuario = userEvent.setup();
+        render(
+            <MemoryRouter>
+                <AcoesDaLinha nome="Animais" aoApagar={aoApagar} pergunta="Apagar Animais e as 12 palavras dela?" />
+            </MemoryRouter>,
+        );
+
+        await usuario.click(screen.getByRole("button", { name: "Apagar Animais" }));
+        expect(screen.getByRole("group", { name: "Apagar Animais e as 12 palavras dela?" }).textContent).toContain("Apagar Animais e as 12 palavras dela?");
+
+        await usuario.click(screen.getByRole("button", { name: "Sim, apagar" }));
+        expect(document.activeElement).not.toBe(screen.getByRole("button", { name: "Apagar Animais" }));
+    });
+
+    it("depois do não, o foco volta para o botão de apagar", async () => {
+        const usuario = userEvent.setup();
+        abrir(vi.fn(() => Promise.resolve()));
+
+        await usuario.click(screen.getByRole("button", { name: "Apagar Animais" }));
+        await usuario.click(screen.getByRole("button", { name: "Não" }));
+
+        expect(document.activeElement).toBe(screen.getByRole("button", { name: "Apagar Animais" }));
+    });
+
     it("aceita outros nomes para as ações, como sair da sala", async () => {
         const aoApagar = vi.fn(() => Promise.resolve());
         const usuario = userEvent.setup();

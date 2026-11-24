@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useEffectEvent, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { traduzirErro } from "../api/erros";
 import { chutarLetra, comecarPartida, escolherPalavra } from "../api/partida";
@@ -19,11 +19,15 @@ import { usePartida } from "../hooks/usePartida";
 import { casasDaForca, casasDaPalavra, separarLetras, totalDeLetras } from "../jogo/forcaDaSala";
 import { letraBase } from "../jogo/letras";
 import { ERROS_PARA_PERDER } from "../jogo/Rodada";
+import { anuncioDaPartida, quemGanhou } from "../salas/anuncioDaPartida";
 import { useSessao } from "../sessao/contexto";
 import type { EscolhaDaPalavra, EstadoDaPartida, ForcaDeOutro, MinhaForca, OpcaoDePalavra, ResultadoDaVez, VezEmAndamento } from "../types/partida";
 import { DICA, esquemaPalavra, PALAVRA } from "../validacao/esquemasDasListas";
 import "./Jogo.css";
 import "./Partida.css";
+
+// O título da seção de cada fase. Só uma fase aparece por vez, e é para ele que o foco vai quando a fase muda.
+const ID_DA_FASE = "titulo-da-fase";
 
 type AoEscolher = (escolha: EscolhaDaPalavra) => Promise<void>;
 type AoChutar = (letra: string) => Promise<EstadoDaPartida>;
@@ -43,8 +47,8 @@ function SalaDeEspera({ estado, souDono, comecando, aoComecar }: PropsDaEspera) 
     const poucos = estado.placar.length < 2;
 
     return (
-        <section className="secao" aria-labelledby="titulo-espera">
-            <h2 id="titulo-espera" className="secao__titulo">
+        <section className="secao" aria-labelledby={ID_DA_FASE}>
+            <h2 id={ID_DA_FASE} className="secao__titulo" tabIndex={-1}>
                 Esperando para começar
             </h2>
             <p className="subtitulo">
@@ -60,7 +64,7 @@ function SalaDeEspera({ estado, souDono, comecando, aoComecar }: PropsDaEspera) 
             </ul>
             {souDono ? (
                 <>
-                    <button type="button" className="botao partida__acao" disabled={poucos || comecando} onClick={aoComecar}>
+                    <button type="button" className="botao partida__acao" disabled={poucos || comecando} aria-busy={comecando} onClick={aoComecar}>
                         {comecando ? "Começando..." : "Começar a partida"}
                     </button>
                     {poucos && <p className="partida__recado">A partida precisa de pelo menos 2 jogadores. Mande o link da sala para alguém.</p>}
@@ -95,7 +99,7 @@ function OpcoesDaLista({ opcoes, aoEscolher }: { opcoes: OpcaoDePalavra[]; aoEsc
             <ul className="partida__opcoes">
                 {opcoes.map((opcao) => (
                     <li key={opcao.id}>
-                        <button type="button" className="partida__opcao" disabled={enviando} onClick={() => void escolher(opcao.id)}>
+                        <button type="button" className="partida__opcao" disabled={enviando} aria-busy={enviando} onClick={() => void escolher(opcao.id)}>
                             <strong>{opcao.palavra}</strong>
                             {opcao.dica && <span className="partida__dica-da-opcao">Dica: {opcao.dica}</span>}
                         </button>
@@ -124,7 +128,7 @@ function PalavraDigitada({ aoEscolher }: { aoEscolher: AoEscolher }) {
                 Só você vê a palavra. Use só letras, com espaço ou hífen entre as partes.
             </CampoTexto>
             <CampoTexto id="dica" rotulo="Dica (opcional)" valor={valores.dica} aoMudar={(valor) => alterar("dica", valor)} erro={erros.dica} maxLength={DICA.maximo} autoComplete="off" />
-            <button type="submit" className="botao partida__acao" disabled={enviando}>
+            <button type="submit" className="botao partida__acao" disabled={enviando} aria-busy={enviando}>
                 {enviando ? "Enviando..." : "Escolher esta palavra"}
             </button>
         </form>
@@ -135,8 +139,8 @@ function EscolherPalavra({ vez, aoEscolher }: { vez: VezEmAndamento; aoEscolher:
     const opcoes = vez.opcoes ?? [];
 
     return (
-        <section className="secao" aria-labelledby="titulo-escolha">
-            <h2 id="titulo-escolha" className="secao__titulo">
+        <section className="secao" aria-labelledby={ID_DA_FASE}>
+            <h2 id={ID_DA_FASE} className="secao__titulo" tabIndex={-1}>
                 Sua vez de escolher a palavra
             </h2>
             <Cronometro segundos={vez.segundosRestantes} rotulo="Tempo para escolher" />
@@ -157,10 +161,18 @@ function recadoDaForca(forca: MinhaForca): string {
 // só (key = número da vez), então a fila também.
 function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca: MinhaForca; aoChutar: AoChutar }) {
     const [aviso, setAviso] = useState("");
+    const [falha, setFalha] = useState<string | null>(null);
     const { certas, erradas } = separarLetras(forca.casas, forca.letras);
     const pedir = useFilaDeLetras(
-        async (letra) => (await aoChutar(letra)).vez?.minhaForca?.terminou ?? false,
-        (falha) => setAviso(traduzirErro(falha).mensagem),
+        async (letra) => {
+            const estado = await aoChutar(letra);
+            setFalha(null);
+            return estado.vez?.minhaForca?.terminou ?? false;
+        },
+        (erro) => {
+            setAviso("");
+            setFalha(traduzirErro(erro).mensagem);
+        },
     );
 
     function teclar(tecla: string) {
@@ -196,6 +208,7 @@ function MinhaForcaNaVez({ vez, forca, aoChutar }: { vez: VezEmAndamento; forca:
             </p>
             <Forca erros={forca.erros} />
             <Palavra casas={casasDaForca(forca.casas)} mostrarResposta={false} />
+            <Aviso mensagem={falha} />
             <p className="jogo__aviso" role="status">
                 {aviso || recadoDaForca(forca)}
             </p>
@@ -246,10 +259,10 @@ function ForcasDosJogadores({ forcas, eu, letras }: { forcas: ForcaDeOutro[]; eu
     );
 }
 
-function ResultadoDaVezAnterior({ resultado }: { resultado: ResultadoDaVez }) {
+function ResultadoDaVezAnterior({ resultado, idDoTitulo = "titulo-resultado" }: { resultado: ResultadoDaVez; idDoTitulo?: string }) {
     return (
-        <section className="secao" aria-labelledby="titulo-resultado">
-            <h2 id="titulo-resultado" className="secao__titulo">
+        <section className="secao" aria-labelledby={idDoTitulo}>
+            <h2 id={idDoTitulo} className="secao__titulo" tabIndex={-1}>
                 A palavra era {resultado.palavra}
             </h2>
             <p className="subtitulo">
@@ -300,8 +313,8 @@ function VezDaPartida({ estado, vez, aoEscolher, aoChutar }: PropsDaVez) {
     if (vez.fase === "intervalo") {
         return (
             <>
-                {estado.anterior && <ResultadoDaVezAnterior resultado={estado.anterior} />}
-                <Cronometro segundos={vez.segundosRestantes} rotulo={`${quemEscolhe} escolhe a próxima palavra em`} />
+                {estado.anterior && <ResultadoDaVezAnterior resultado={estado.anterior} idDoTitulo={ID_DA_FASE} />}
+                <Cronometro segundos={vez.segundosRestantes} rotulo={`${quemEscolhe} escolhe a próxima palavra em`} avisarNoFim={false} />
             </>
         );
     }
@@ -309,10 +322,10 @@ function VezDaPartida({ estado, vez, aoEscolher, aoChutar }: PropsDaVez) {
         return souQuemEscolhe ? (
             <EscolherPalavra vez={vez} aoEscolher={aoEscolher} />
         ) : (
-            <section className="secao">
-                <p className="partida__recado" role="status">
-                    {vez.escolhedor.apelido} está escolhendo a palavra.
-                </p>
+            <section className="secao" aria-labelledby={ID_DA_FASE}>
+                <h2 id={ID_DA_FASE} className="secao__titulo" tabIndex={-1}>
+                    {vez.escolhedor.apelido} está escolhendo a palavra
+                </h2>
                 <Cronometro segundos={vez.segundosRestantes} rotulo="Tempo para escolher" />
             </section>
         );
@@ -320,6 +333,9 @@ function VezDaPartida({ estado, vez, aoEscolher, aoChutar }: PropsDaVez) {
     const letras = vez.minhaForca ? totalDeLetras(vez.minhaForca.casas) : totalDeLetras([...(vez.palavra ?? "")]);
     return (
         <>
+            <h2 id={ID_DA_FASE} className="secao__titulo partida__fase" tabIndex={-1}>
+                {vez.minhaForca ? "Adivinhe a palavra" : vez.palavra ? "Sua palavra" : "Os outros estão adivinhando"}
+            </h2>
             <Cronometro segundos={vez.segundosRestantes} rotulo="Tempo para adivinhar" />
             {vez.palavra && <PalavraDeQuemEscolheu palavra={vez.palavra} />}
             {vez.minhaForca && <MinhaForcaNaVez key={vez.numero} vez={vez} forca={vez.minhaForca} aoChutar={aoChutar} />}
@@ -328,17 +344,11 @@ function VezDaPartida({ estado, vez, aoEscolher, aoChutar }: PropsDaVez) {
     );
 }
 
-function quemGanhou(estado: EstadoDaPartida): string {
-    const maior = Math.max(...estado.placar.map((jogador) => jogador.pontos));
-    const vencedores = estado.placar.filter((jogador) => jogador.pontos === maior).map((jogador) => jogador.apelido);
-    return vencedores.length === 1 ? `${vencedores[0]} ganhou a partida!` : `Empate entre ${vencedores.join(" e ")}!`;
-}
-
 function FimDaPartida({ estado }: { estado: EstadoDaPartida }) {
     return (
         <>
-            <section className="secao" aria-labelledby="titulo-fim">
-                <h2 id="titulo-fim" className="secao__titulo">
+            <section className="secao" aria-labelledby={ID_DA_FASE}>
+                <h2 id={ID_DA_FASE} className="secao__titulo" tabIndex={-1}>
                     Fim de jogo
                 </h2>
                 {estado.placar.length > 0 && <p className="partida__vencedor">{quemGanhou(estado)}</p>}
@@ -364,6 +374,41 @@ function PartidaFechada({ salaId, mensagem }: { salaId: number; mensagem: string
     );
 }
 
+// A partida muda sozinha (a tela pergunta ao back a cada segundo), então quem não vê a tela precisa ouvir a mudança.
+// O recado sai numa região viva sempre montada, só quando a fase muda (não na primeira carga). Se a seção de antes
+// sumiu com o foco dentro (o teclado de quem acertou, por exemplo), o foco vai para o título da seção nova; se a
+// pessoa estava em outro lugar, como o cabeçalho, ele fica onde está.
+function useAnuncioDaPartida(estado: EstadoDaPartida | null): string {
+    const anuncio = estado ? anuncioDaPartida(estado) : null;
+    const chave = anuncio?.chave ?? null;
+    const [ultimaChave, setUltimaChave] = useState<string | null>(null);
+    const [texto, setTexto] = useState("");
+    if (chave !== null && chave !== ultimaChave) {
+        setUltimaChave(chave);
+        if (ultimaChave !== null) {
+            setTexto(anuncio?.texto ?? "");
+        }
+    }
+
+    const chaveDoFoco = useRef<string | null>(null);
+    useEffect(() => {
+        if (chave === null || chave === chaveDoFoco.current) {
+            return;
+        }
+        const primeiraCarga = chaveDoFoco.current === null;
+        chaveDoFoco.current = chave;
+        if (primeiraCarga) {
+            return;
+        }
+        const focado = document.activeElement;
+        if (!focado || focado === document.body) {
+            document.getElementById(ID_DA_FASE)?.focus();
+        }
+    }, [chave]);
+
+    return texto;
+}
+
 // A partida da sala: a espera, a vez de cada um, o placar e o fim. A tela pergunta pela partida a cada segundo.
 export function PartidaPage() {
     const salaId = Number(useParams().id);
@@ -372,6 +417,7 @@ export function PartidaPage() {
     const { estado, erro, parou, agir } = usePartida(salaId);
     const [aviso, setAviso] = useState<string | null>(null);
     const [comecando, setComecando] = useState(false);
+    const anuncio = useAnuncioDaPartida(estado);
     const sala = daSala.situacao === "pronta" ? daSala.dados : null;
 
     async function comecar() {
@@ -403,6 +449,9 @@ export function PartidaPage() {
             <main className="pagina__conteudo jogo">
                 <TopoDaPagina titulo={sala?.nome ?? "Partida"} voltar={{ para: `/salas/${salaId}`, rotulo: "Voltar para a sala" }} />
                 <Aviso mensagem={aviso} />
+                <p className="so-leitor" aria-live="polite">
+                    {anuncio}
+                </p>
 
                 {parou && <PartidaFechada salaId={salaId} mensagem={erro} />}
                 {!parou && !estado && (erro ? <Aviso mensagem={erro} /> : <p className="jogo__aviso" role="status">Carregando a partida...</p>)}
@@ -421,7 +470,7 @@ export function PartidaPage() {
                                     <VezDaPartida estado={estado} vez={estado.vez} aoEscolher={escolher} aoChutar={chutar} />
                                 ) : (
                                     <p className="jogo__aviso" role="status">
-                                        Preparando a próxima vez...
+                                        Preparando a próxima palavra...
                                     </p>
                                 )}
                                 <Placar titulo="Placar" linhas={placar} />

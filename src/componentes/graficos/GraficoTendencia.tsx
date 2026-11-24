@@ -18,7 +18,7 @@ function DicaTendencia({ active, payload }: TooltipContentProps) {
     if (!active || !ponto) {
         return null;
     }
-    return <Dica titulo={formatarDia(ponto.dia)} linhas={[{ nome: "letras para acertar", valor: String(ponto.letras), cor: COR_VOCE }]} />;
+    return <Dica titulo={formatarDia(ponto.dia)} linhas={[{ nome: "letras chutadas", valor: String(ponto.letras), cor: COR_VOCE }]} />;
 }
 
 type Props = {
@@ -37,7 +37,7 @@ export function GraficoTendencia({ serie }: Props) {
             </figcaption>
             <Legenda
                 itens={[
-                    { nome: "Letras para acertar", cor: COR_VOCE, marca: "circulo" },
+                    { nome: "Letras chutadas", cor: COR_VOCE, marca: "circulo" },
                     { nome: "Tendência", cor: COR_RETA, marca: "linha" },
                 ]}
             />
@@ -69,7 +69,7 @@ export function GraficoTendencia({ serie }: Props) {
                 titulo="Letras por dia"
                 colunas={[
                     { titulo: "Dia", valor: (ponto) => formatarDia(ponto.dia) },
-                    { titulo: "Letras", valor: (ponto) => ponto.letras, numerica: true },
+                    { titulo: "Letras chutadas", valor: (ponto) => ponto.letras, numerica: true },
                     { titulo: "Tendência", valor: (ponto) => (ponto.tendencia === null ? "—" : decimal.format(ponto.tendencia)), numerica: true },
                 ]}
                 linhas={serie.pontos}

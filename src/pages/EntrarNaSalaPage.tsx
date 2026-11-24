@@ -29,7 +29,7 @@ function CamposDaEntrada({ sala, apelidoInicial }: { sala: Sala; apelidoInicial:
     return (
         <>
             <Aviso mensagem={erroDaApi} />
-            <Formulario aoEnviar={() => enviar(entrar)} enviando={enviando} voltarPara="/salas" rotuloDoEnvio="Entrar na sala">
+            <Formulario aoEnviar={() => enviar(entrar)} enviando={enviando} voltarPara="/salas" rotuloDoEnvio="Entrar na sala" rotuloEnviando="Entrando...">
                 <CampoTexto id="apelido" rotulo="Apelido" valor={valores.apelido} aoMudar={(valor) => alterar("apelido", valor)} erro={erros.apelido} autoComplete="nickname" maxLength={APELIDO.maximo}>
                     É o nome que os outros jogadores veem nesta sala.
                 </CampoTexto>

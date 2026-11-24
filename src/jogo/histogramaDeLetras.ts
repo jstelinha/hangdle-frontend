@@ -18,6 +18,11 @@ export type ColunaDeLetras = {
     destaque: boolean;
 };
 
+// A coluna de quem jogou não se distingue só pela cor: o "(você)" vai no próprio rótulo, no eixo e na tabela.
+export function rotuloComVoce(coluna: ColunaDeLetras): string {
+    return coluna.destaque ? `${coluna.rotulo} (você)` : coluna.rotulo;
+}
+
 function ehDestaque(destaque: SeuResultado | undefined, acertou: boolean, letras?: number): boolean {
     return destaque !== undefined && destaque.acertou === acertou && (letras === undefined || destaque.chutes === letras);
 }

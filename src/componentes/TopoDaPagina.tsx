@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 import "./TopoDaPagina.css";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function TopoDaPagina({ titulo, subtitulo, voltar, children }: Props) {
+    useTituloDaPagina(titulo);
     return (
         <div className="topo">
             {voltar && (

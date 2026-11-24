@@ -1,6 +1,6 @@
 import { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from "axios";
 import { describe, expect, it } from "vitest";
-import { lerSessao } from "../sessao/sessao";
+import { lerSessao, sessaoVenceu } from "../sessao/sessao";
 import { entrarComo } from "../testes/ferramentas";
 import { api } from "./axios";
 
@@ -39,6 +39,13 @@ describe("axios da API", () => {
         await expect(api.get("/resultados", { adapter: responderCom(401) })).rejects.toBeInstanceOf(AxiosError);
 
         expect(lerSessao()).toBeNull();
+        expect(sessaoVenceu()).toBe(true);
+    });
+
+    it("visitante que recebe 401 não vira sessão vencida", async () => {
+        await expect(api.get("/listas", { adapter: responderCom(401) })).rejects.toBeInstanceOf(AxiosError);
+
+        expect(sessaoVenceu()).toBe(false);
     });
 
     it("senha errada no login não mexe na sessão", async () => {

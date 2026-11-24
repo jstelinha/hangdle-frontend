@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { tokenQueExpiraEm } from "../testes/ferramentas";
-import { CHAVE_TOKEN, CHAVE_USUARIO, lerSessao, salvarSessao } from "./sessao";
+import { CHAVE_TOKEN, CHAVE_USUARIO, encerrarSessao, lerSessao, salvarSessao, sessaoVenceu } from "./sessao";
 
 const LARISSA = { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" };
 
@@ -18,6 +18,24 @@ describe("sessão no localStorage", () => {
         expect(lerSessao()).toBeNull();
         expect(localStorage.getItem(CHAVE_TOKEN)).toBeNull();
         expect(localStorage.getItem(CHAVE_USUARIO)).toBeNull();
+    });
+
+    it("token vencido deixa a marca de sessão vencida, e entrar de novo tira", () => {
+        salvarSessao({ token: tokenQueExpiraEm(-1), usuario: LARISSA });
+
+        lerSessao();
+        expect(sessaoVenceu()).toBe(true);
+
+        salvarSessao({ token: tokenQueExpiraEm(60), usuario: LARISSA });
+        expect(sessaoVenceu()).toBe(false);
+    });
+
+    it("sair não é sessão vencida, e sair depois de vencer tira a marca", () => {
+        encerrarSessao("vencida");
+        expect(sessaoVenceu()).toBe(true);
+
+        encerrarSessao();
+        expect(sessaoVenceu()).toBe(false);
     });
 
     it("texto que não é JWT não vale como sessão", () => {

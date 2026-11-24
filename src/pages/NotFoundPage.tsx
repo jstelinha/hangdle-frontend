@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { Cabecalho } from "../componentes/Cabecalho";
+import { useTituloDaPagina } from "../hooks/useTituloDaPagina";
 
 export function NotFoundPage() {
+    useTituloDaPagina("Página não encontrada");
     return (
         <div className="pagina">
             <Cabecalho />

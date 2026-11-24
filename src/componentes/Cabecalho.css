@@ -57,6 +57,7 @@
 }
 
 .cabecalho__nome {
+    min-width: 0;
     max-width: 16ch;
     overflow: hidden;
     color: var(--tinta-2);
@@ -78,8 +79,12 @@
 }
 
 @media (max-width: 600px) {
+    /* O nome e o Sair dividem a primeira linha com o logotipo: o bloco ocupa o que sobra, e o nome encolhe com
+       reticências. Os links descem para a segunda linha. */
     .cabecalho__linha--conta .cabecalho__conta {
         order: 1;
+        flex: 1 1 0;
+        justify-content: flex-end;
     }
 
     .cabecalho__linha--conta .cabecalho__menu {

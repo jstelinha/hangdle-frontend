@@ -10,6 +10,7 @@ import { TabelaPaginada, type Coluna } from "../componentes/TabelaPaginada";
 import { TopoDaPagina } from "../componentes/TopoDaPagina";
 import { comAviso, useAvisoDaNavegacao } from "../hooks/useAvisoDaNavegacao";
 import { useCarregamento } from "../hooks/useCarregamento";
+import { useFocoNoAviso } from "../hooks/useFocoNoAviso";
 import { useListagem } from "../hooks/useListagem";
 import { linkDoConvite, rodadasDaSala, SITUACAO_DA_SALA } from "../salas/descricao";
 import { useSessao } from "../sessao/contexto";
@@ -126,6 +127,7 @@ function LinhaDoParticipante({ participante, souEu, souDonoDaSala, encerrada, ao
                     rotuloDeEditar="Trocar apelido"
                     aoApagar={podeSair || podeTirar ? () => aoSair(participante) : undefined}
                     rotuloDeApagar={podeSair ? "Sair" : "Tirar"}
+                    pergunta={podeSair ? "Sair da sala?" : `Tirar ${apelido} da sala?`}
                 />
             </td>
         </tr>
@@ -139,6 +141,7 @@ export function SalaPage() {
     const usuarioId = useSessao()?.usuario.id;
     const navegar = useNavigate();
     const [aviso, setAviso] = useAvisoDaNavegacao();
+    const { refDoAviso, focarNoAviso } = useFocoNoAviso(aviso);
     const { carregamento: daSala, recarregar: recarregarSala } = useCarregamento(useCallback(() => salas.buscar(salaId), [salaId]));
     const participantes = useMemo(() => participantesDaSala(salaId), [salaId]);
     const { carregamento: dosParticipantes, recarregar: recarregarParticipantes } = useListagem(participantes.listar);
@@ -147,13 +150,14 @@ export function SalaPage() {
     const souDonoDaSala = sala?.donoId === usuarioId;
 
     async function sair(participante: Participante) {
+        focarNoAviso();
         try {
             await participantes.apagar(participante.id);
             if (participante.usuarioId === usuarioId) {
                 navegar("/salas?filtro=minhas", comAviso(sala ? `Você saiu da sala ${sala.nome}.` : "Você saiu da sala."));
                 return;
             }
-            setAviso({ tipo: "sucesso", mensagem: `${participante.apelido} saiu da sala.` });
+            setAviso({ tipo: "sucesso", mensagem: `Você tirou ${participante.apelido} da sala.` });
             recarregarSala();
             recarregarParticipantes();
         } catch (erro) {
@@ -173,7 +177,7 @@ export function SalaPage() {
                     )}
                 </TopoDaPagina>
 
-                <Aviso mensagem={aviso?.mensagem ?? null} tipo={aviso?.tipo} />
+                <Aviso ref={refDoAviso} mensagem={aviso?.mensagem ?? null} tipo={aviso?.tipo} />
                 {daSala.situacao === "falhou" && <Aviso mensagem={daSala.mensagem} />}
                 {sala && <DadosDaSala sala={sala} />}
 

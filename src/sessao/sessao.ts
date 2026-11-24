@@ -2,6 +2,9 @@ import type { Sessao, Usuario } from "../types/usuario";
 
 export const CHAVE_TOKEN = "hangdle.token";
 export const CHAVE_USUARIO = "hangdle.usuario";
+// Fica nesta aba (sessionStorage) quando a sessão acabou por ter vencido, e não porque a pessoa saiu: o login usa
+// para dizer "Sua sessão expirou". Sai quando a pessoa entra de novo ou clica em Sair.
+export const CHAVE_SESSAO_VENCIDA = "hangdle.sessaoVencida";
 
 function expiracaoDoToken(token: string): number | null {
     const partes = token.split(".");
@@ -32,6 +35,26 @@ function ehUsuario(valor: unknown): valor is Usuario {
     );
 }
 
+function marcarSessaoVencida(vencida: boolean): void {
+    try {
+        if (vencida) {
+            sessionStorage.setItem(CHAVE_SESSAO_VENCIDA, "1");
+        } else {
+            sessionStorage.removeItem(CHAVE_SESSAO_VENCIDA);
+        }
+    } catch {
+        return;
+    }
+}
+
+export function sessaoVenceu(): boolean {
+    try {
+        return sessionStorage.getItem(CHAVE_SESSAO_VENCIDA) === "1";
+    } catch {
+        return false;
+    }
+}
+
 export const EVENTO_SESSAO = "hangdle:sessao";
 
 function avisarQueMudou(): void {
@@ -55,6 +78,7 @@ function apagarSessao(): void {
 export function salvarSessao(sessao: Sessao): void {
     localStorage.setItem(CHAVE_TOKEN, sessao.token);
     guardarUsuario(sessao.usuario);
+    marcarSessaoVencida(false);
     avisarQueMudou();
 }
 
@@ -63,8 +87,10 @@ export function atualizarUsuarioDaSessao(usuario: Usuario): void {
     avisarQueMudou();
 }
 
-export function encerrarSessao(): void {
+// Sem motivo, é a pessoa que saiu. Com "vencida", foi o token que venceu (ou o back recusou).
+export function encerrarSessao(motivo?: "vencida"): void {
     apagarSessao();
+    marcarSessaoVencida(motivo === "vencida");
     avisarQueMudou();
 }
 
@@ -83,6 +109,9 @@ export function lerSessao(agora: number = Date.now()): Sessao | null {
 
     const expiracao = expiracaoDoToken(token);
     if (expiracao === null || expiracao <= agora) {
+        if (expiracao !== null) {
+            marcarSessaoVencida(true);
+        }
         apagarSessao();
         return null;
     }

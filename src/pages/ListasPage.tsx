@@ -7,6 +7,7 @@ import { Cabecalho } from "../componentes/Cabecalho";
 import { TabelaPaginada, type Coluna } from "../componentes/TabelaPaginada";
 import { TopoDaPagina } from "../componentes/TopoDaPagina";
 import { useAvisoDaNavegacao } from "../hooks/useAvisoDaNavegacao";
+import { useFocoNoAviso } from "../hooks/useFocoNoAviso";
 import { useListagem } from "../hooks/useListagem";
 import type { Lista } from "../types/lista";
 
@@ -17,6 +18,14 @@ function legenda(total: number): string {
 }
 
 // Rubrica de Front-end - Componentização - Componentes exclusivos de uma página em funções separadas
+// A pergunta diz o que se perde: as palavras vão junto com a lista.
+function perguntaDeApagar(lista: Lista): string {
+    if (lista.totalDePalavras === 0) {
+        return `Apagar ${lista.nome}?`;
+    }
+    return lista.totalDePalavras === 1 ? `Apagar ${lista.nome} e a palavra dela?` : `Apagar ${lista.nome} e as ${lista.totalDePalavras} palavras dela?`;
+}
+
 function LinhaDaLista({ lista, aoApagar }: { lista: Lista; aoApagar: (lista: Lista) => Promise<void> }) {
     return (
         <tr>
@@ -25,7 +34,12 @@ function LinhaDaLista({ lista, aoApagar }: { lista: Lista; aoApagar: (lista: Lis
             </td>
             <td className="numero">{lista.totalDePalavras}</td>
             <td className="tabela__acoes">
-                <AcoesDaLinha nome={lista.nome} editarEm={`/listas/${lista.id}/editar`} aoApagar={() => aoApagar(lista)} />
+                <AcoesDaLinha
+                    nome={lista.nome}
+                    editarEm={`/listas/${lista.id}/editar`}
+                    aoApagar={() => aoApagar(lista)}
+                    pergunta={perguntaDeApagar(lista)}
+                />
             </td>
         </tr>
     );
@@ -35,8 +49,10 @@ function LinhaDaLista({ lista, aoApagar }: { lista: Lista; aoApagar: (lista: Lis
 export function ListasPage() {
     const { carregamento, recarregar } = useListagem(listas.listar);
     const [aviso, setAviso] = useAvisoDaNavegacao();
+    const { refDoAviso, focarNoAviso } = useFocoNoAviso(aviso);
 
     async function apagar(lista: Lista) {
+        focarNoAviso();
         try {
             await listas.apagar(lista.id);
             setAviso({ tipo: "sucesso", mensagem: `A lista ${lista.nome} foi apagada, com as palavras dela.` });
@@ -56,7 +72,7 @@ export function ListasPage() {
                     </Link>
                 </TopoDaPagina>
 
-                <Aviso mensagem={aviso?.mensagem ?? null} tipo={aviso?.tipo} />
+                <Aviso ref={refDoAviso} mensagem={aviso?.mensagem ?? null} tipo={aviso?.tipo} />
 
                 <TabelaPaginada
                     carregamento={carregamento}

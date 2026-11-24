@@ -85,7 +85,7 @@ describe("página da sala", () => {
         await usuario.click(screen.getByRole("button", { name: "Sim, tirar" }));
 
         expect(apagar).toHaveBeenCalledWith("/salas/5/participantes/2");
-        expect(await screen.findByText("Caio saiu da sala.")).toBeTruthy();
+        expect(await screen.findByText("Você tirou Caio da sala.")).toBeTruthy();
         expect(await screen.findByText("1 jogador")).toBeTruthy();
         expect(screen.getByText("1 de 6")).toBeTruthy();
     });

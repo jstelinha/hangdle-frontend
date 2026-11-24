@@ -7,6 +7,12 @@ export function lerVoltarPara(estado: unknown): string | null {
     return caminho.startsWith("/") && !caminho.startsWith("//") ? caminho : null;
 }
 
+// Se quem mandou para o login foi uma tela que exige conta (a RotaProtegida ou o recado das salas), e não a própria
+// pessoa clicando em Entrar: só aí o login explica por que ela está ali.
+export function lerPedeConta(estado: unknown): boolean {
+    return typeof estado === "object" && estado !== null && "pedeConta" in estado && estado.pedeConta === true;
+}
+
 export function recadoDoLogin(voltarPara: string): string {
     return voltarPara.startsWith("/salas") ? "Faça login para jogar online." : "Entre na sua conta para continuar.";
 }

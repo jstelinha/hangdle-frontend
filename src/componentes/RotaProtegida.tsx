@@ -7,7 +7,7 @@ export function RotaProtegida() {
     const sessao = useSessao();
     const local = useLocation();
     if (!sessao) {
-        return <Navigate to="/login" replace state={{ voltarPara: `${local.pathname}${local.search}` }} />;
+        return <Navigate to="/login" replace state={{ voltarPara: `${local.pathname}${local.search}`, pedeConta: true }} />;
     }
     return <Outlet />;
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useSessao } from "../sessao/contexto";
 import { encerrarSessao } from "../sessao/sessao";
 import type { Sessao } from "../types/usuario";
@@ -7,7 +7,9 @@ import { Dialogo } from "./Dialogo";
 import { Logotipo } from "./Logotipo";
 import "./Cabecalho.css";
 
-const VOLTAR_PARA_AS_SALAS = { voltarPara: "/salas" };
+const VOLTAR_PARA_AS_SALAS = { voltarPara: "/salas", pedeConta: true };
+// O Entrar do cabeçalho volta para onde a pessoa estava, menos do próprio login ou do cadastro.
+const SEM_VOLTA = ["/login", "/cadastro"];
 
 function MenuDaConta({ sessao }: { sessao: Sessao }) {
     const navegar = useNavigate();
@@ -46,6 +48,8 @@ function MenuDaConta({ sessao }: { sessao: Sessao }) {
 // recado com os caminhos para entrar ou criar uma, e o login leva de volta para as salas.
 function MenuDoVisitante() {
     const [aberto, setAberto] = useState(false);
+    const { pathname, search } = useLocation();
+    const voltar = SEM_VOLTA.includes(pathname) ? undefined : { voltarPara: `${pathname}${search}` };
 
     return (
         <>
@@ -55,7 +59,7 @@ function MenuDoVisitante() {
                 </button>
             </nav>
             <div className="cabecalho__conta">
-                <Link to="/login" className="botao botao--discreto">
+                <Link to="/login" state={voltar} className="botao botao--discreto">
                     Entrar
                 </Link>
             </div>

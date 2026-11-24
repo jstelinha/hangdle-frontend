@@ -22,7 +22,7 @@
     flex: none;
     width: 10px;
     height: 10px;
-    border: 2px solid var(--regua-forte);
+    border: 2px solid var(--borda-campo);
     border-radius: 2px;
 }
 

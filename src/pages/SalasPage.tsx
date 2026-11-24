@@ -8,6 +8,7 @@ import { Cabecalho } from "../componentes/Cabecalho";
 import { TabelaPaginada, type Coluna } from "../componentes/TabelaPaginada";
 import { TopoDaPagina } from "../componentes/TopoDaPagina";
 import { useAvisoDaNavegacao } from "../hooks/useAvisoDaNavegacao";
+import { useFocoNoAviso } from "../hooks/useFocoNoAviso";
 import { useListagem } from "../hooks/useListagem";
 import { useSessao } from "../sessao/contexto";
 import { resumoDaSala } from "../salas/descricao";
@@ -62,6 +63,7 @@ function LinhaDaSala({ sala, ehDono, aoApagar }: PropsDaLinha) {
                         nome={sala.nome}
                         editarEm={sala.situacao === "esperando" ? `/salas/${sala.id}/editar` : undefined}
                         aoApagar={() => aoApagar(sala)}
+                        pergunta={`Apagar ${sala.nome}? Quem está nela sai.`}
                     />
                 )}
             </td>
@@ -77,8 +79,10 @@ export function SalasPage() {
     const listar = useCallback((pagina: number) => salas.listar(pagina, { filtro }), [filtro]);
     const { carregamento, recarregar } = useListagem(listar);
     const [aviso, setAviso] = useAvisoDaNavegacao();
+    const { refDoAviso, focarNoAviso } = useFocoNoAviso(aviso);
 
     async function apagar(sala: Sala) {
+        focarNoAviso();
         try {
             await salas.apagar(sala.id);
             setAviso({ tipo: "sucesso", mensagem: `A sala ${sala.nome} foi apagada.` });
@@ -99,7 +103,7 @@ export function SalasPage() {
                 </TopoDaPagina>
 
                 <AbasDasSalas filtro={filtro} />
-                <Aviso mensagem={aviso?.mensagem ?? null} tipo={aviso?.tipo} />
+                <Aviso ref={refDoAviso} mensagem={aviso?.mensagem ?? null} tipo={aviso?.tipo} />
 
                 <TabelaPaginada
                     carregamento={carregamento}

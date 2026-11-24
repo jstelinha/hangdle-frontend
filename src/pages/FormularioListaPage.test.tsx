@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
-import { abrir, entrarComo, erroDaApi } from "../testes/ferramentas";
+import { abrir, entrarComo, erroDaApi, esperarStatusComTexto } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
 const get = vi.mocked(api.get);
@@ -115,7 +115,7 @@ describe("edição de lista", () => {
         await salvarCom(usuario, "Bichos");
 
         expect(put).toHaveBeenCalledWith("/listas/3", { nome: "Bichos" });
-        expect((await screen.findByRole("status")).textContent).toBe("Lista Bichos salva.");
+        expect((await esperarStatusComTexto()).textContent).toBe("Lista Bichos salva.");
     });
 
     it("não abre a lista de outra pessoa", async () => {

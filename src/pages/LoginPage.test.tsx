@@ -3,7 +3,8 @@ import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/axios";
 import { CHAVE_CHUTES_DO_DIA } from "../jogo/chutesDoDia";
-import { abrir, erroDaApi, erroDeRede, tokenQueExpiraEm } from "../testes/ferramentas";
+import { encerrarSessao, salvarSessao } from "../sessao/sessao";
+import { abrir, erroDaApi, erroDeRede, statusComTexto, tokenQueExpiraEm } from "../testes/ferramentas";
 
 vi.mock("../api/axios", () => ({ api: { get: vi.fn(), post: vi.fn() } }));
 const post = vi.mocked(api.post);
@@ -114,5 +115,28 @@ describe("tela de login", () => {
         expect(await screen.findByRole("heading", { name: "Entrar" })).toBeTruthy();
         expect(localStorage.getItem("hangdle.token")).toBeNull();
         expect(localStorage.getItem("hangdle.usuario")).toBeNull();
+    });
+
+    it("sessão vencida: o login diz por que a pessoa caiu ali e, depois de entrar, volta para onde ela estava", async () => {
+        salvarSessao({ token: tokenQueExpiraEm(-10), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } });
+        post.mockResolvedValueOnce({ status: 200, data: { token: tokenQueExpiraEm(3600), usuario: { id: 7, nome: "Larissa Souza", email: "larissa@exemplo.com" } } });
+        get.mockResolvedValue({ data: { itens: [], pagina: 1, porPagina: 10, total: 0, totalDePaginas: 0 } });
+        const usuario = userEvent.setup();
+        abrir("/listas");
+
+        expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
+        expect(statusComTexto().textContent).toBe("Sua sessão expirou. Entre de novo para continuar.");
+
+        await entrar(usuario, "larissa@exemplo.com", "Hangdle#2026");
+
+        expect(await screen.findByRole("heading", { name: "Suas listas" })).toBeTruthy();
+    });
+
+    it("quem saiu não vê o recado de sessão vencida", async () => {
+        encerrarSessao();
+        abrir("/listas");
+
+        expect(screen.getByRole("heading", { name: "Entrar" })).toBeTruthy();
+        expect(statusComTexto().textContent).toBe("Entre na sua conta para continuar.");
     });
 });
