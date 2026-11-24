@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Casa } from "../jogo/Rodada";
 import "./Palavra.css";
 
@@ -35,10 +36,21 @@ function descrever(casas: Casa[], mostrarResposta: boolean): string {
     return `Palavra: ${letras.join(", ")}`;
 }
 
+// O tamanho das casas sai do grupo mais comprido: é ele que precisa caber numa linha (Palavra.css).
+function letrasDoMaiorGrupo(grupos: Casa[][]): number {
+    return Math.max(1, ...grupos.map((grupo) => grupo.length));
+}
+
 export function Palavra({ casas, mostrarResposta }: Props) {
+    const grupos = agruparPorPalavra(casas);
     return (
-        <div className="palavra" role="img" aria-label={descrever(casas, mostrarResposta)}>
-            {agruparPorPalavra(casas).map((grupo, indiceGrupo) => (
+        <div
+            className="palavra"
+            role="img"
+            aria-label={descrever(casas, mostrarResposta)}
+            style={{ "--letras": letrasDoMaiorGrupo(grupos) } as CSSProperties}
+        >
+            {grupos.map((grupo, indiceGrupo) => (
                 <div key={indiceGrupo} className="palavra__grupo" aria-hidden="true">
                     {grupo.map((casa, indice) => (
                         <span key={indice} className={classeDaCasa(casa, mostrarResposta)}>
